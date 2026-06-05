@@ -5,9 +5,10 @@ from localdocs.models import DocumentBlock
 def test_chunk_blocks_preserves_metadata_and_overlap():
     block = DocumentBlock(
         text="one two three four five six seven eight nine ten",
-        file_name="note.txt",
-        file_path="note.txt",
-        file_type="txt",
+        file_name="manual.pdf",
+        file_path="/docs/manual.pdf",
+        file_type="pdf",
+        page_number=3,
     )
 
     chunks = chunk_blocks([block], chunk_size=4, overlap=1)
@@ -15,7 +16,10 @@ def test_chunk_blocks_preserves_metadata_and_overlap():
     assert len(chunks) == 3
     assert chunks[0].text == "one two three four"
     assert chunks[1].text == "four five six seven"
-    assert chunks[0].file_name == "note.txt"
+    assert chunks[0].file_name == "manual.pdf"
+    assert chunks[0].file_path == "/docs/manual.pdf"
+    assert chunks[0].file_type == "pdf"
+    assert chunks[0].page_number == 3
     assert chunks[0].chunk_index == 1
     assert chunks[1].chunk_index == 2
 

@@ -1,6 +1,6 @@
 # LocalDocs AI Roadmap
 
-## v0.1
+## v0.1 - Completed
 
 - PDF, TXT, and Markdown support
 - Local TF-IDF search
@@ -11,15 +11,15 @@
 - Streamlit MVP interface
 - Basic tests
 
-## v0.2
+## v0.2 - Completed
 
 - DOCX support
 - Better UI for document status and source inspection
-- Better summary quality
 - Simple configuration file
 - More helpful parsing and indexing errors
+- More tests for parsing, QA, citations, summaries, export, and config
 
-## v0.3
+## v0.3 - Next
 
 - Obsidian export
 - Anki flashcard export

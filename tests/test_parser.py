@@ -1,3 +1,5 @@
+import pytest
+
 from localdocs.parser import parse_bytes, parse_path
 
 
@@ -23,6 +25,35 @@ def test_parse_markdown_file(tmp_path):
     assert blocks[0].file_name == "guide.md"
     assert blocks[0].file_type == "markdown"
     assert "Markdown is supported" in blocks[0].text
+
+
+def test_parse_docx_file_preserves_metadata(tmp_path):
+    from docx import Document
+
+    path = tmp_path / "guide.docx"
+    document = Document()
+    document.add_paragraph("LocalDocs AI now supports DOCX files.")
+    document.add_paragraph("")
+    document.add_paragraph("Empty paragraphs are skipped.")
+    document.save(path)
+
+    blocks = parse_path(path)
+
+    assert len(blocks) == 1
+    assert blocks[0].file_name == "guide.docx"
+    assert blocks[0].file_type == "docx"
+    assert "supports DOCX files" in blocks[0].text
+    assert "Empty paragraphs are skipped" in blocks[0].text
+
+
+def test_invalid_docx_has_readable_error():
+    with pytest.raises(ValueError, match="Could not open DOCX broken.docx"):
+        parse_bytes(b"not a real docx", "broken.docx")
+
+
+def test_legacy_doc_is_not_supported():
+    with pytest.raises(ValueError, match="old.doc is not supported"):
+        parse_bytes(b"legacy word file", "old.doc")
 
 
 def test_parse_pdf_file_preserves_page_number():

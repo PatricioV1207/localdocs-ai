@@ -1,0 +1,13 @@
+[chunking]
+chunk_size = 220
+chunk_overlap = 40
+
+[search]
+top_k = 4
+minimum_score = 0.05
+
+[exports]
+export_dir = "exports"
+
+[llm]
+use_openai_if_available = true

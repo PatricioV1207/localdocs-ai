@@ -7,6 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from localdocs.chunker import chunk_blocks
+from localdocs.config import DEFAULT_CONFIG_PATH, load_config
 from localdocs.export import export_qa_history, export_summaries
 from localdocs.indexer import build_index
 from localdocs.parser import parse_path, parse_uploaded_file
@@ -15,27 +16,67 @@ from localdocs.search import search
 from localdocs.summarizer import summarize_documents
 
 SAMPLE_DOCS_DIR = Path("sample_docs")
-SUPPORTED_TYPES = ["pdf", "txt", "md", "markdown"]
+SUPPORTED_TYPES = ["pdf", "docx", "txt", "md", "markdown"]
 
 
 def main() -> None:
     load_dotenv()
     st.set_page_config(page_title="LocalDocs AI", page_icon="LD", layout="wide")
     _init_state()
+    config = load_config()
 
     st.title("LocalDocs AI")
     st.write("Turn local documents into a private searchable knowledge base.")
 
     with st.sidebar:
         st.header("Settings")
-        chunk_size = st.number_input("Chunk size", min_value=50, max_value=1000, value=220, step=10)
-        overlap = st.number_input("Chunk overlap", min_value=0, max_value=300, value=40, step=10)
-        top_k = st.number_input("Search results", min_value=1, max_value=10, value=5, step=1)
-        api_key = os.getenv("OPENAI_API_KEY")
-        st.caption("OpenAI mode is enabled." if api_key else "Using local extractive answers.")
+        st.caption(f"Config: {DEFAULT_CONFIG_PATH}")
+        for warning in config.warnings:
+            st.warning(warning)
 
+        chunk_size = st.number_input(
+            "Chunk size",
+            min_value=1,
+            max_value=max(2000, config.chunking.chunk_size),
+            value=config.chunking.chunk_size,
+            step=10,
+        )
+        overlap = st.number_input(
+            "Chunk overlap",
+            min_value=0,
+            max_value=max(1000, config.chunking.chunk_overlap),
+            value=config.chunking.chunk_overlap,
+            step=10,
+        )
+        top_k = st.number_input(
+            "Search results",
+            min_value=1,
+            max_value=max(50, config.search.top_k),
+            value=config.search.top_k,
+            step=1,
+        )
+        minimum_score = st.number_input(
+            "Minimum search score",
+            min_value=0.0,
+            max_value=1.0,
+            value=config.search.minimum_score,
+            step=0.01,
+            format="%.2f",
+        )
+        use_openai = st.checkbox("Use OpenAI if available", value=config.llm.use_openai_if_available)
+        api_key = os.getenv("OPENAI_API_KEY") if use_openai else None
+        if api_key:
+            st.caption("OpenAI mode is enabled.")
+        elif use_openai:
+            st.caption("No OpenAI key found. Using local extractive answers.")
+        else:
+            st.caption("Using local extractive answers.")
+        st.caption(f"Export folder: {config.exports.export_dir}")
+
+    st.subheader("Document Upload")
+    st.caption("Supported formats: PDF, DOCX, TXT, Markdown.")
     uploaded_files = st.file_uploader(
-        "Upload PDF, TXT, or Markdown documents",
+        "Upload PDF, DOCX, TXT, or Markdown documents",
         type=SUPPORTED_TYPES,
         accept_multiple_files=True,
     )
@@ -59,8 +100,8 @@ def main() -> None:
     _show_index_status()
 
     st.divider()
-    st.subheader("Ask a Question")
-    question = st.text_input("Question", placeholder="What do these documents say about local search?")
+    st.subheader("Question")
+    question = st.text_input("Your question", placeholder="What do these documents say about local search?")
 
     if st.button("Ask", use_container_width=True):
         if not _index_ready():
@@ -68,8 +109,18 @@ def main() -> None:
         elif not question.strip():
             st.warning("Enter a question first.")
         else:
-            results = search(st.session_state.index, question, top_k=int(top_k))
-            answer = answer_question(question, results, openai_api_key=os.getenv("OPENAI_API_KEY"))
+            results = search(
+                st.session_state.index,
+                question,
+                top_k=int(top_k),
+                min_score=float(minimum_score),
+            )
+            answer = answer_question(
+                question,
+                results,
+                openai_api_key=api_key,
+                min_score=float(minimum_score),
+            )
             st.session_state.qa_history.append(answer)
             st.session_state.last_results = results
 
@@ -83,7 +134,7 @@ def main() -> None:
         else:
             st.session_state.summaries = summarize_documents(
                 st.session_state.chunks,
-                openai_api_key=os.getenv("OPENAI_API_KEY"),
+                openai_api_key=api_key,
             )
 
     _show_summaries()
@@ -91,8 +142,12 @@ def main() -> None:
     st.divider()
     st.subheader("Export")
     if st.button("Export summaries and Q&A history", use_container_width=True):
-        summaries_path = export_summaries(st.session_state.summaries)
-        qa_path = export_qa_history(st.session_state.qa_history)
+        if not st.session_state.summaries and not st.session_state.qa_history:
+            st.warning("Generate a summary or ask a question before exporting.")
+            return
+
+        summaries_path = export_summaries(st.session_state.summaries, export_dir=config.exports.export_dir)
+        qa_path = export_qa_history(st.session_state.qa_history, export_dir=config.exports.export_dir)
         st.success(f"Exported to {summaries_path} and {qa_path}.")
 
 
@@ -115,7 +170,10 @@ def _parse_uploads(uploaded_files) -> tuple[list, list[str]]:
     errors = []
     for uploaded_file in uploaded_files:
         try:
-            blocks.extend(parse_uploaded_file(uploaded_file))
+            parsed_blocks = parse_uploaded_file(uploaded_file)
+            if not parsed_blocks:
+                errors.append(f"{uploaded_file.name} had no extractable text and was skipped.")
+            blocks.extend(parsed_blocks)
         except ValueError as exc:
             errors.append(str(exc))
     return blocks, errors
@@ -131,7 +189,10 @@ def _parse_sample_docs() -> tuple[list, list[str]]:
     errors = []
     for path in paths:
         try:
-            blocks.extend(parse_path(path))
+            parsed_blocks = parse_path(path)
+            if not parsed_blocks:
+                errors.append(f"{path.name} had no extractable text and was skipped.")
+            blocks.extend(parsed_blocks)
         except ValueError as exc:
             errors.append(str(exc))
     return blocks, errors
@@ -177,10 +238,13 @@ def _show_index_status() -> None:
         )
         return
 
-    st.info(
-        f"Current index: {len(st.session_state.document_names)} document(s), "
-        f"{len(st.session_state.chunks)} chunk(s)."
-    )
+    st.subheader("Processed Documents")
+    metric_col, chunk_col = st.columns(2)
+    metric_col.metric("Documents", len(st.session_state.document_names))
+    chunk_col.metric("Chunks", len(st.session_state.chunks))
+    with st.expander("Processed file names", expanded=True):
+        for file_name in st.session_state.document_names:
+            st.markdown(f"- {file_name}")
 
 
 def _show_latest_answer() -> None:
@@ -188,22 +252,25 @@ def _show_latest_answer() -> None:
         return
 
     answer = st.session_state.qa_history[-1]
+    st.subheader("Answer")
     st.markdown(answer.answer)
     st.caption("Answer mode: OpenAI" if answer.used_llm else "Answer mode: local extractive")
     if getattr(answer, "note", ""):
         st.caption(answer.note)
 
-    st.markdown("**Sources:**")
+    st.subheader("Sources")
     if answer.citations:
         for citation in answer.citations:
             st.markdown(f"- {citation.label()}")
     else:
         st.markdown("- No sources available.")
 
-    if st.checkbox("Show relevant chunks"):
+    with st.expander("Relevant chunks"):
+        if not st.session_state.last_results:
+            st.write("No relevant chunks were returned.")
         for result in st.session_state.last_results:
-            with st.expander(f"{result.source_label()} | score {result.score:.3f}"):
-                st.write(result.text)
+            st.markdown(f"**{result.source_label()} | score {result.score:.3f}**")
+            st.write(result.text)
 
 
 def _show_summaries() -> None:

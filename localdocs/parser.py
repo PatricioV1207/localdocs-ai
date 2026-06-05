@@ -1,4 +1,4 @@
-"""Document parsing for PDF, TXT, and Markdown files."""
+"""Document parsing for PDF, DOCX, TXT, and Markdown files."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Iterable
 
 from localdocs.models import DocumentBlock
 
-SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".md", ".markdown"}
+SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".markdown"}
 
 
 def parse_path(path: str | Path) -> list[DocumentBlock]:
@@ -54,6 +54,8 @@ def parse_bytes(data: bytes, file_name: str, file_path: str | None = None) -> li
 
     if extension == ".pdf":
         return _parse_pdf(data, file_name, file_path)
+    if extension == ".docx":
+        return _parse_docx(data, file_name, file_path)
 
     file_type = "markdown" if extension in {".md", ".markdown"} else "txt"
     text = _clean_text(_decode_text(data, file_name))
@@ -99,6 +101,29 @@ def _parse_pdf(data: bytes, file_name: str, file_path: str) -> list[DocumentBloc
         )
 
     return blocks
+
+
+def _parse_docx(data: bytes, file_name: str, file_path: str) -> list[DocumentBlock]:
+    try:
+        from docx import Document
+
+        document = Document(BytesIO(data))
+    except Exception as exc:
+        raise ValueError(f"Could not open DOCX {file_name}: {exc}") from exc
+
+    paragraphs = [_clean_text(paragraph.text) for paragraph in document.paragraphs]
+    text = "\n".join(paragraph for paragraph in paragraphs if paragraph).strip()
+    if not text:
+        return []
+
+    return [
+        DocumentBlock(
+            text=text,
+            file_name=file_name,
+            file_path=file_path,
+            file_type="docx",
+        )
+    ]
 
 
 def _decode_text(data: bytes, file_name: str) -> str:
