@@ -29,5 +29,30 @@ def test_summarize_documents_returns_source_name_and_citations(monkeypatch):
     assert "document search local" in summaries[0].summary
     assert [citation.label() for citation in summaries[0].citations] == [
         "guide.md, chunk 1",
-        "guide.md, chunk 2",
     ]
+
+
+def test_summarize_documents_avoids_copyright_front_matter(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    chunks = [
+        DocumentChunk(
+            text="Copyright 2024 Publisher Press. All rights reserved. ISBN 1234567890.",
+            file_name="manual.pdf",
+            file_path="manual.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="Pneumatic actuators convert compressed air into controlled linear motion. The control valve regulates airflow to extend or retract the actuator safely.",
+            file_name="manual.pdf",
+            file_path="manual.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+    ]
+
+    summaries = summarize_documents(chunks)
+
+    assert "Pneumatic actuators" in summaries[0].summary
+    assert "Copyright" not in summaries[0].summary
+    assert [citation.label() for citation in summaries[0].citations] == ["manual.pdf, chunk 2"]

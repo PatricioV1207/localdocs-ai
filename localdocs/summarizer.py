@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
-import re
 from collections import defaultdict
 
+from localdocs.cleaning import best_sentences, informative_chunks
 from localdocs.models import Citation, DocumentChunk, DocumentSummary
 
 
@@ -23,16 +23,17 @@ def summarize_documents(
     api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
     summaries: list[DocumentSummary] = []
     for file_name, document_chunks in sorted(grouped_chunks.items()):
-        citations = [Citation.from_chunk(chunk) for chunk in document_chunks[:2]]
+        selected_chunks = informative_chunks(document_chunks, limit=4)
+        citations = [Citation.from_chunk(chunk) for chunk in selected_chunks[:2]]
         summary_text = None
         used_llm = False
         note = ""
         if api_key:
-            summary_text, note = _try_openai_summary(file_name, document_chunks, api_key, model)
+            summary_text, note = _try_openai_summary(file_name, selected_chunks, api_key, model)
             used_llm = summary_text is not None
 
         if not summary_text:
-            summary_text = _extractive_summary(file_name, document_chunks)
+            summary_text = _extractive_summary(file_name, selected_chunks)
             used_llm = False
 
         summaries.append(
@@ -85,15 +86,22 @@ def _try_openai_summary(
 
 
 def _extractive_summary(file_name: str, chunks: list[DocumentChunk], sentence_limit: int = 3) -> str:
-    text = " ".join(chunk.text for chunk in chunks[:4])
-    sentences = _split_sentences(text)
+    sentences: list[str] = []
+    seen: set[str] = set()
+    for chunk in informative_chunks(chunks, limit=4):
+        for sentence in best_sentences(chunk.text, limit=2):
+            key = sentence.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            sentences.append(sentence)
+            if len(sentences) >= sentence_limit:
+                break
+        if len(sentences) >= sentence_limit:
+            break
+
     if not sentences:
         return f"{file_name}: No summary could be generated from the indexed text."
 
     selected = sentences[:sentence_limit]
     return f"{file_name}: {' '.join(selected)}"
-
-
-def _split_sentences(text: str) -> list[str]:
-    compact = " ".join(text.split())
-    return [sentence.strip() for sentence in re.split(r"(?<=[.!?])\s+", compact) if sentence.strip()]

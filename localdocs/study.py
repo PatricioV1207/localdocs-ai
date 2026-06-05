@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
+from localdocs.cleaning import (
+    appears_spanish,
+    best_concept,
+    first_heading,
+    informative_chunks,
+    is_low_value_text,
+    is_weak_concept,
+)
 from localdocs.models import Citation, DocumentChunk, StudyQuestion
 
 
@@ -12,18 +19,20 @@ def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 2
     """Generate simple local study questions from chunks."""
 
     questions: list[StudyQuestion] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[str] = set()
 
-    for chunk in chunks:
+    for chunk in informative_chunks(chunks):
         if len(questions) >= max_questions:
             break
+        if is_low_value_text(chunk.text):
+            continue
 
         question_text = _question_from_chunk(chunk)
         if not question_text:
             continue
 
         citation = Citation.from_chunk(chunk)
-        key = (question_text.lower(), citation.label())
+        key = question_text.lower()
         if key in seen:
             continue
 
@@ -60,46 +69,43 @@ def export_study_questions_markdown(
 
 
 def _question_from_chunk(chunk: DocumentChunk) -> str:
-    heading = _first_heading(chunk.text)
-    if heading:
-        return f"How would you explain {heading}?"
-
-    sentence = _first_sentence(chunk.text)
-    if not sentence:
+    concept = first_heading(chunk.text) or best_concept(chunk.text)
+    if not concept or is_weak_concept(concept):
         return ""
 
-    terms = [term for term in re.findall(r"[A-Za-z][A-Za-z0-9-]{3,}", sentence) if term.lower() not in _STOPWORDS]
-    if terms:
-        return f"What should you remember about {terms[0]} from {chunk.file_name}?"
-    return f"What is the main idea of {chunk.file_name}, chunk {chunk.chunk_index}?"
+    if appears_spanish(chunk.text):
+        return _spanish_question(concept, chunk.text)
+
+    if _looks_like_process(chunk.text):
+        return f"Why is {concept} important?"
+    if _looks_like_function(chunk.text):
+        return f"What is the function of {concept}?"
+    if _looks_like_recommendation(chunk.text):
+        return f"What measures are recommended for {concept}?"
+    return f"What is {concept}?"
 
 
-def _first_heading(text: str) -> str:
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("#"):
-            return stripped.lstrip("#").strip()
-    return ""
+def _spanish_question(concept: str, text: str) -> str:
+    lower = text.lower()
+    if "recom" in lower or "medida" in lower:
+        return f"¿Qué medidas se recomiendan para {concept}?"
+    if "función" in lower or "funcion" in lower:
+        return f"¿Cuál es la función de {concept}?"
+    if "importante" in lower or "importancia" in lower:
+        return f"¿Por qué es importante {concept}?"
+    return f"¿Qué es {concept}?"
 
 
-def _first_sentence(text: str) -> str:
-    compact = " ".join(line.strip() for line in text.splitlines() if line.strip() and not line.strip().startswith("#"))
-    compact = " ".join(compact.split())
-    if not compact:
-        return ""
-    sentences = [sentence.strip() for sentence in re.split(r"(?<=[.!?])\s+", compact) if sentence.strip()]
-    return sentences[0] if sentences else compact
+def _looks_like_process(text: str) -> bool:
+    lower = text.lower()
+    return any(term in lower for term in ["important", "importance", "required", "critical", "because"])
 
 
-_STOPWORDS = {
-    "about",
-    "from",
-    "into",
-    "local",
-    "with",
-    "that",
-    "this",
-    "they",
-    "their",
-    "there",
-}
+def _looks_like_function(text: str) -> bool:
+    lower = text.lower()
+    return any(term in lower for term in ["function", "purpose", "role"])
+
+
+def _looks_like_recommendation(text: str) -> bool:
+    lower = text.lower()
+    return any(term in lower for term in ["recommend", "measure", "should", "best practice"])

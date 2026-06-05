@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
+from localdocs.cleaning import best_concept, best_sentences, informative_chunks, is_low_value_text, is_weak_concept
 from localdocs.models import Citation, DocumentChunk, Flashcard
 
 
@@ -12,18 +12,20 @@ def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 20) -> lis
     """Generate simple extractive flashcards from document chunks."""
 
     flashcards: list[Flashcard] = []
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[tuple[str, str]] = set()
 
-    for chunk in chunks:
+    for chunk in informative_chunks(chunks):
         if len(flashcards) >= max_cards:
             break
+        if is_low_value_text(chunk.text):
+            continue
 
         question, answer = _card_from_chunk(chunk)
         if not question or not answer:
             continue
 
         citation = Citation.from_chunk(chunk)
-        key = (question.lower(), answer.lower(), citation.label())
+        key = (question.lower(), answer.lower())
         if key in seen:
             continue
 
@@ -56,35 +58,22 @@ def export_anki_tsv(flashcards: list[Flashcard], path: str | Path = "exports/fla
 
 
 def _card_from_chunk(chunk: DocumentChunk) -> tuple[str, str]:
-    heading = _first_heading(chunk.text)
-    answer = _first_sentence_without_heading(chunk.text)
+    concept = best_concept(chunk.text)
+    answer = _best_answer(chunk.text)
     if not answer:
         return "", ""
 
-    if heading:
-        question = f"What is a key point from {heading}?"
+    if concept and not is_weak_concept(concept):
+        question = f"What is a key point about {concept}?"
     else:
         question = f"What is a key point from {chunk.file_name}, chunk {chunk.chunk_index}?"
 
     return question, _truncate(answer, 280)
 
 
-def _first_heading(text: str) -> str:
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("#"):
-            return stripped.lstrip("#").strip()
-    return ""
-
-
-def _first_sentence_without_heading(text: str) -> str:
-    lines = [line.strip() for line in text.splitlines() if line.strip() and not line.strip().startswith("#")]
-    compact = " ".join(" ".join(lines).split())
-    if not compact:
-        return ""
-
-    sentences = [sentence.strip() for sentence in re.split(r"(?<=[.!?])\s+", compact) if sentence.strip()]
-    return sentences[0] if sentences else compact
+def _best_answer(text: str) -> str:
+    sentences = best_sentences(text, limit=1)
+    return sentences[0] if sentences else ""
 
 
 def _truncate(text: str, max_chars: int) -> str:

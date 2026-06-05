@@ -16,7 +16,7 @@ def test_generate_flashcards_includes_source_reference():
     cards = generate_flashcards(chunks, max_cards=5)
 
     assert len(cards) == 1
-    assert cards[0].question == "What is a key point from Local Search?"
+    assert cards[0].question == "What is a key point about Local Search?"
     assert "TF-IDF search" in cards[0].answer
     assert cards[0].citation.label() == "guide.md, chunk 1"
 
@@ -38,3 +38,35 @@ def test_export_anki_tsv_writes_three_columns(tmp_path):
     assert len(fields) == 3
     assert fields[0].startswith("What is a key point")
     assert fields[2] == "guide.md, chunk 2"
+
+
+def test_generate_flashcards_filters_duplicates_and_noise():
+    chunks = [
+        DocumentChunk(
+            text="Copyright 2024 Publisher Press. All rights reserved. ISBN 1234567890.",
+            file_name="manual.pdf",
+            file_path="manual.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="# Pneumatic Actuator\nA pneumatic actuator converts compressed air into controlled linear motion.",
+            file_name="manual.pdf",
+            file_path="manual.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+        DocumentChunk(
+            text="# Pneumatic Actuator\nA pneumatic actuator converts compressed air into controlled linear motion.",
+            file_name="manual.pdf",
+            file_path="manual.pdf",
+            file_type="pdf",
+            chunk_index=3,
+        ),
+    ]
+
+    cards = generate_flashcards(chunks, max_cards=5)
+
+    assert len(cards) == 1
+    assert all("Copyright" not in card.answer for card in cards)
+    assert cards[0].citation.label() == "manual.pdf, chunk 2"

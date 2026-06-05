@@ -17,6 +17,7 @@ from localdocs.qa import answer_question
 from localdocs.search import search
 from localdocs.study import export_study_questions_markdown, generate_study_questions
 from localdocs.summarizer import summarize_documents
+from localdocs.cleaning import invalid_question_message, is_valid_question
 
 SAMPLE_DOCS_DIR = Path("sample_docs")
 SUPPORTED_TYPES = ["pdf", "docx", "txt", "md", "markdown"]
@@ -37,40 +38,46 @@ def main() -> None:
         for warning in config.warnings:
             st.warning(warning)
 
-        chunk_strategy = st.selectbox(
-            "Chunking strategy",
-            options=["word", "paragraph", "heading"],
-            index=["word", "paragraph", "heading"].index(config.chunking.strategy),
-        )
-        chunk_size = st.number_input(
-            "Chunk size",
-            min_value=1,
-            max_value=max(2000, config.chunking.chunk_size),
-            value=config.chunking.chunk_size,
-            step=10,
-        )
-        overlap = st.number_input(
-            "Chunk overlap",
-            min_value=0,
-            max_value=max(1000, config.chunking.chunk_overlap),
-            value=config.chunking.chunk_overlap,
-            step=10,
-        )
-        top_k = st.number_input(
-            "Search results",
-            min_value=1,
-            max_value=max(50, config.search.top_k),
-            value=config.search.top_k,
-            step=1,
-        )
-        minimum_score = st.number_input(
-            "Minimum search score",
-            min_value=0.0,
-            max_value=1.0,
-            value=config.search.minimum_score,
-            step=0.01,
-            format="%.2f",
-        )
+        with st.expander("Advanced settings"):
+            chunk_strategy = st.selectbox(
+                "Chunking strategy",
+                options=["word", "paragraph", "heading"],
+                index=["word", "paragraph", "heading"].index(config.chunking.strategy),
+                help="How parsed text is split before indexing. Word is safest; paragraph keeps blocks together; heading works best for Markdown.",
+            )
+            chunk_size = st.number_input(
+                "Chunk size",
+                min_value=1,
+                max_value=max(2000, config.chunking.chunk_size),
+                value=config.chunking.chunk_size,
+                step=10,
+                help="Approximate maximum words per chunk. Larger chunks keep more context but can reduce search focus.",
+            )
+            overlap = st.number_input(
+                "Chunk overlap",
+                min_value=0,
+                max_value=max(1000, config.chunking.chunk_overlap),
+                value=config.chunking.chunk_overlap,
+                step=10,
+                help="Words repeated between word-based chunks. Smaller overlap is faster; larger overlap can preserve context.",
+            )
+            top_k = st.number_input(
+                "Search results",
+                min_value=1,
+                max_value=max(50, config.search.top_k),
+                value=config.search.top_k,
+                step=1,
+                help="How many matching chunks to retrieve for a question.",
+            )
+            minimum_score = st.number_input(
+                "Minimum search score",
+                min_value=0.0,
+                max_value=1.0,
+                value=config.search.minimum_score,
+                step=0.01,
+                format="%.2f",
+                help="Minimum similarity score required for evidence. Raise it to be stricter; lower it if useful answers are missed.",
+            )
         use_openai = st.checkbox("Use OpenAI if available", value=config.llm.use_openai_if_available)
         api_key = os.getenv("OPENAI_API_KEY") if use_openai else None
         if api_key:
@@ -116,8 +123,8 @@ def main() -> None:
     if st.button("Ask", use_container_width=True):
         if not _index_ready():
             st.warning("Process documents with searchable text before asking a question.")
-        elif not question.strip():
-            st.warning("Enter a question first.")
+        elif not is_valid_question(question):
+            st.warning(invalid_question_message())
         else:
             results = search(
                 st.session_state.index,

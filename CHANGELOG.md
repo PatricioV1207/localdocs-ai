@@ -16,6 +16,21 @@
 - Roadmap clarity for v0.4 plans.
 - Ignore rules for local caches, build artifacts, secrets, and generated exports.
 
+## v0.3.1
+
+### Fixed
+
+- Improved local extractive answer quality and weak-evidence messaging.
+- Rejected empty, too-short, and placeholder questions before QA runs.
+- Reduced noisy text from repeated headers, footers, page numbers, copyright/front matter, and table-of-contents-like chunks.
+- Improved summaries, flashcards, and study questions so they prefer informative chunks.
+- Reduced duplicate or low-value flashcards and study questions.
+
+### Improved
+
+- Moved chunk and search controls into an Advanced settings section with help text.
+- Added tests for question validation, text cleaning, low-value chunk filtering, summaries, QA, flashcards, and study questions.
+
 ## v0.3.0
 
 ### Added

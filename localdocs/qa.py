@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
-import re
 
+from localdocs.cleaning import best_sentences, informative_chunks, invalid_question_message, is_valid_question
 from localdocs.models import Answer, Citation, SearchResult
 
-MIN_EVIDENCE_SCORE = 0.02
+MIN_EVIDENCE_SCORE = 0.05
+WEAK_EVIDENCE_MESSAGE = "I could not find enough strong evidence in the documents."
 
 
 def answer_question(
@@ -19,18 +20,28 @@ def answer_question(
 ) -> Answer:
     """Answer a question using only retrieved document context."""
 
-    strong_results = [result for result in search_results if result.score >= min_score]
-    if not question.strip() or not strong_results:
+    if not is_valid_question(question):
         return Answer(
             question=question,
-            answer="There is not enough evidence in the indexed documents to answer this question.",
+            answer=invalid_question_message(),
             citations=[],
             context=search_results,
             used_llm=False,
             enough_evidence=False,
         )
 
-    selected_results = strong_results[:3]
+    strong_results = [result for result in search_results if result.score >= min_score]
+    if not strong_results:
+        return Answer(
+            question=question,
+            answer=WEAK_EVIDENCE_MESSAGE,
+            citations=[],
+            context=search_results,
+            used_llm=False,
+            enough_evidence=False,
+        )
+
+    selected_results = _select_results(strong_results)
     citations = _unique_citations(selected_results)
     api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
 
@@ -94,31 +105,36 @@ def _try_openai_answer(
 
 
 def _extractive_answer(question: str, results: list[SearchResult]) -> str:
-    snippets = [_best_snippet(result.text, question) for result in results]
-    snippets = [snippet for snippet in snippets if snippet]
+    snippets: list[str] = []
+    seen: set[str] = set()
+    for result in results:
+        for sentence in best_sentences(result.text, question, limit=2):
+            key = sentence.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            snippets.append(_truncate(sentence, 320))
+            if len(snippets) >= 3:
+                break
+        if len(snippets) >= 3:
+            break
 
     if not snippets:
-        return "There is not enough evidence in the indexed documents to answer this question."
+        return WEAK_EVIDENCE_MESSAGE
 
     bullet_list = "\n".join(f"- {snippet}" for snippet in snippets)
-    return f"I found relevant context in the indexed documents:\n\n{bullet_list}"
+    return f"Based on the strongest retrieved evidence:\n\n{bullet_list}"
 
 
-def _best_snippet(text: str, question: str, max_chars: int = 700) -> str:
-    sentences = _split_sentences(text)
-    if not sentences:
-        return _truncate(text, max_chars)
-
-    query_terms = {term.lower() for term in re.findall(r"[A-Za-z0-9]+", question) if len(term) > 2}
-    if not query_terms:
-        return _truncate(sentences[0], max_chars)
-
-    def score(sentence: str) -> int:
-        terms = {term.lower() for term in re.findall(r"[A-Za-z0-9]+", sentence)}
-        return len(query_terms & terms)
-
-    best_sentence = max(sentences, key=score)
-    return _truncate(best_sentence, max_chars)
+def _select_results(results: list[SearchResult], limit: int = 3) -> list[SearchResult]:
+    informative = informative_chunks([result.chunk for result in results], limit=limit)
+    selected: list[SearchResult] = []
+    for chunk in informative:
+        for result in results:
+            if result.chunk == chunk and result not in selected:
+                selected.append(result)
+                break
+    return selected[:limit] or results[:limit]
 
 
 def _context_text(results: list[SearchResult]) -> str:
@@ -140,11 +156,6 @@ def _unique_citations(results: list[SearchResult]) -> list[Citation]:
         seen.add(key)
         citations.append(citation)
     return citations
-
-
-def _split_sentences(text: str) -> list[str]:
-    compact = " ".join(text.split())
-    return [sentence.strip() for sentence in re.split(r"(?<=[.!?])\s+", compact) if sentence.strip()]
 
 
 def _truncate(text: str, max_chars: int) -> str:

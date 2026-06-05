@@ -1,6 +1,6 @@
-# LocalDocs AI v0.3 Architecture
+# LocalDocs AI v0.3.1 Architecture
 
-LocalDocs AI v0.3 is a small Streamlit app backed by plain Python modules. The goal is to add useful study/export workflows without changing the local-first, beginner-friendly architecture.
+LocalDocs AI v0.3.1 is a small Streamlit app backed by plain Python modules. The goal is to keep the v0.3 study/export workflows while improving local answer and generation quality.
 
 ## Parsing
 
@@ -13,6 +13,14 @@ LocalDocs AI v0.3 is a small Streamlit app backed by plain Python modules. The g
 - PDF blocks keep the page number so answers can cite pages.
 
 Unsupported formats raise readable errors. PDF support depends on extractable text, so scanned PDFs without a text layer are out of scope for v0.3. Legacy `.doc`, OCR, image parsing, audio, and web import are intentionally not included.
+
+## Cleaning and Quality Filtering
+
+`localdocs/cleaning.py` normalizes parsed text and provides shared quality helpers for local extractive workflows.
+
+The cleaning layer removes or reduces obvious noise such as repeated PDF headers and footers, standalone page numbers, copyright lines, excessive underscores, table-of-contents-like text, repeated document codes, and very low-information lines. PDF parsing detects repeated lines across pages before cleaning individual page blocks.
+
+Summaries, local QA, flashcards, and study questions use quality scores to prefer informative chunks. Low-value chunks can still be indexed for search, but generation tools avoid them unless there is no better content.
 
 ## Chunking
 
@@ -42,9 +50,9 @@ TF-IDF is still used in v0.3 because it is local, fast, dependency-light, unders
 
 `localdocs/qa.py` answers questions using retrieved chunks only.
 
-When `OPENAI_API_KEY` is not configured, the app returns extractive snippets from the most relevant chunks. When an API key exists, the app may ask OpenAI to write a concise answer, but the prompt restricts the answer to retrieved document context.
+When `OPENAI_API_KEY` is not configured, the app returns a concise extractive answer from the most relevant informative sentences. When an API key exists, the app may ask OpenAI to write a concise answer, but the prompt restricts the answer to retrieved document context.
 
-If search results are missing or weak, the answer says there is not enough evidence in the indexed documents. Every successful answer includes citations such as:
+If search results are missing or weak, the answer says it could not find enough strong evidence in the documents. Every successful answer includes citations such as:
 
 ```md
 Sources:
@@ -56,7 +64,7 @@ If OpenAI is configured but unavailable or errors, LocalDocs falls back to the s
 
 ## Summaries and Export
 
-`localdocs/summarizer.py` creates a basic per-document summary from early document chunks, with optional OpenAI summarization when configured. `localdocs/export.py` writes summaries to `exports/summaries.md` and Q&A history to `exports/qa_history.md`.
+`localdocs/summarizer.py` creates a basic per-document summary from informative document chunks, with optional OpenAI summarization when configured. `localdocs/export.py` writes summaries to `exports/summaries.md` and Q&A history to `exports/qa_history.md`.
 
 ## Flashcards and Study Questions
 

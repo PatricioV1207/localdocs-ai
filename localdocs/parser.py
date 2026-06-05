@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Iterable
 
+from localdocs.cleaning import clean_text, repeated_line_keys
 from localdocs.models import DocumentBlock
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".markdown"}
@@ -80,13 +81,17 @@ def _parse_pdf(data: bytes, file_name: str, file_path: str) -> list[DocumentBloc
     except Exception as exc:
         raise ValueError(f"Could not open PDF {file_name}: {exc}") from exc
 
-    blocks: list[DocumentBlock] = []
+    raw_pages: list[tuple[int, str]] = []
     for page_index, page in enumerate(reader.pages, start=1):
         try:
-            text = _clean_text(page.extract_text() or "")
+            raw_pages.append((page_index, page.extract_text() or ""))
         except Exception as exc:
             raise ValueError(f"Could not extract text from {file_name}, page {page_index}: {exc}") from exc
 
+    repeated_keys = repeated_line_keys([text for _page_index, text in raw_pages])
+    blocks: list[DocumentBlock] = []
+    for page_index, raw_text in raw_pages:
+        text = _clean_text(raw_text, repeated_keys)
         if not text:
             continue
 
@@ -135,7 +140,5 @@ def _decode_text(data: bytes, file_name: str) -> str:
     raise ValueError(f"Could not decode text in {file_name}.")
 
 
-def _clean_text(text: str) -> str:
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    lines = [line.strip() for line in normalized.split("\n")]
-    return "\n".join(line for line in lines if line).strip()
+def _clean_text(text: str, repeated_keys: set[str] | None = None) -> str:
+    return clean_text(text, repeated_line_keys=repeated_keys)

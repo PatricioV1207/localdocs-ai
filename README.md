@@ -7,7 +7,7 @@
 
 LocalDocs AI is an open-source, local-first document intelligence app. It turns PDFs, DOCX files, text notes, and Markdown files into a private searchable knowledge base with cited answers, summaries, study questions, flashcards, and Markdown exports.
 
-Status: v0.3 implemented.
+Status: v0.3.1 implemented.
 
 ## Why LocalDocs AI?
 
@@ -120,6 +120,16 @@ Chunking strategies:
 - `word`: default behavior, split by word count.
 - `paragraph`: group nearby paragraphs into chunks.
 - `heading`: split Markdown by headings when possible, with paragraph fallback.
+
+Chunk and search settings are available in the app sidebar under `Advanced settings`:
+
+- `Chunking strategy`: chooses how parsed text is split before indexing.
+- `Chunk size`: controls the approximate maximum words per chunk.
+- `Chunk overlap`: repeats words between word-based chunks to preserve context.
+- `Search results`: controls how many chunks are retrieved for a question.
+- `Minimum search score`: filters weak matches before QA.
+
+The defaults are intentionally conservative. Raise the minimum score for stricter answers, or lower it if useful evidence is being missed.
 
 ## Obsidian Export
 
@@ -236,6 +246,7 @@ v0.4 is planned to focus on research comparison mode, richer study workflows, an
 - PDF parsing depends on extractable text.
 - DOCX parsing reads normal paragraphs only; legacy `.doc` files are not supported.
 - Search is keyword-oriented TF-IDF, not semantic search.
+- Cleaning and quality filtering are heuristic and may still miss some document noise.
 - Flashcards and study questions are simple extractive outputs.
 - Obsidian export is a Markdown folder export only.
 - Anki export is TSV only.
