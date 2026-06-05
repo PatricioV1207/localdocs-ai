@@ -1,58 +1,42 @@
 # LocalDocs AI
 
-LocalDocs AI is an open-source, local-first app that turns document folders into private, searchable, AI-assisted knowledge bases.
+LocalDocs AI is an open-source, local-first document intelligence app. It turns PDFs, text notes, and Markdown files into a private searchable knowledge base with cited answers, summaries, and Markdown exports.
 
-It helps users process local documents, ask questions, generate summaries, and export useful notes without requiring a cloud-first workflow.
+Status: v0.1 MVP.
 
-> Status: v0.1 MVP in development.
+## Why Local-First Matters
 
-## Why LocalDocs AI?
+People often keep useful knowledge in folders of notes, guides, manuals, and PDFs. A local-first workflow lets users search and reuse those documents without making a cloud service the default place where their information lives.
 
-Many people have useful information trapped inside PDFs, notes, guides, manuals, and Markdown files.
+LocalDocs AI v0.1 keeps the first version simple: documents are parsed locally, indexed locally with TF-IDF, and answered locally when no `OPENAI_API_KEY` is configured.
 
-LocalDocs AI helps turn those files into a searchable knowledge base.
+## Features in v0.1
 
-The project focuses on:
-
-- Local-first document processing
-- Privacy-friendly workflows
-- Answers with source references
-- Markdown exports
-- Simple open-source architecture
-- Study and research use cases
-
-This project is not intended to be just another "chat with PDF" app. The long-term goal is to become a private knowledge base tool for students, researchers, teachers, developers, and small teams.
-
-## v0.1 Features
-
-The first MVP version aims to support:
-
-- PDF parsing
+- PDF parsing with page numbers when text is extractable
 - TXT parsing
-- Markdown parsing
-- Text chunking
-- Local TF-IDF search
+- Markdown and `.markdown` parsing
+- Word-based text chunking with configurable chunk size and overlap
+- Local TF-IDF search with scikit-learn
 - Question answering with source references
-- Extractive fallback without an API key
-- Optional OpenAI integration if `OPENAI_API_KEY` is configured
-- Basic document summaries
+- Extractive fallback when no OpenAI API key is configured
+- Optional OpenAI answer generation when `OPENAI_API_KEY` exists
+- Basic per-document summaries
 - Markdown export for summaries and Q&A history
 - Streamlit interface
-- Basic tests
+- Focused pytest coverage
 
-## What v0.1 is not
+## Not Included Yet
 
-v0.1 is not a final product.
-
-It does not include:
+v0.1 is not a final product. It does not include:
 
 - User accounts
+- Login or authentication
 - Cloud sync
-- Authentication
-- Payment features
+- Payments
 - OCR
 - Audio transcription
 - Image analysis
+- DOCX support
 - Advanced vector databases
 - Desktop packaging
 - Mobile app
@@ -60,26 +44,21 @@ It does not include:
 
 ## Installation
 
-Clone the repository:
+Clone the repository and enter the project folder:
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/localdocs-ai.git
 cd localdocs-ai
 ```
 
-Create a virtual environment:
+Create and activate a virtual environment:
 
 ```bash
 python -m venv .venv
-```
-
-Activate it:
-
-```bash
 source .venv/bin/activate
 ```
 
-On Windows:
+On Windows, activate it with:
 
 ```bash
 .venv\Scripts\activate
@@ -91,37 +70,46 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Run the app:
+## Usage
+
+Run the Streamlit app:
 
 ```bash
 streamlit run app.py
 ```
 
-## Optional OpenAI configuration
+Then:
 
-LocalDocs AI must work without an OpenAI API key.
+1. Upload PDF, TXT, or Markdown documents.
+2. Click `Process uploaded documents`.
+3. Ask a question about the indexed documents.
+4. Review the answer and cited sources.
+5. Generate summaries.
+6. Export summaries and Q&A history to Markdown.
 
-However, if you want optional LLM-generated answers, create a `.env` file:
+You can also click `Process sample documents` to try the app with files in `sample_docs/`.
+
+## Optional OpenAI Configuration
+
+LocalDocs AI works without an OpenAI API key.
+
+If you want optional LLM-generated answers and summaries, set:
+
+```bash
+export OPENAI_API_KEY=your_api_key_here
+```
+
+Or create a `.env` file:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
 ```
 
-If no API key is configured, the app will use local extractive answers based on the most relevant document chunks.
+Even when OpenAI is enabled, answers are generated only from retrieved document chunks. If the retrieved chunks do not contain enough evidence, the app should say so.
 
-## Usage
+## Example Workflow
 
-1. Open the Streamlit app.
-2. Upload PDF, TXT, or Markdown documents.
-3. Click the processing button.
-4. Ask a question about your documents.
-5. Review the answer and cited sources.
-6. Generate summaries.
-7. Export results to Markdown.
-
-## Example workflow
-
-Upload documents such as:
+Use the sample documents:
 
 ```txt
 sample_docs/
@@ -132,17 +120,18 @@ sample_docs/
 Ask:
 
 ```txt
-What is the main idea of the guide?
+What does LocalDocs AI use for local search?
 ```
 
-The app should return an answer with source references, for example:
+The app should return relevant context and sources, for example:
 
 ```md
 Sources:
-- sample_guide.md, chunk 2
+- sample_note.txt, chunk 1
+- sample_guide.md, chunk 1
 ```
 
-## Project structure
+## Project Structure
 
 ```txt
 localdocs-ai/
@@ -156,6 +145,7 @@ localdocs-ai/
 │   ├── architecture.md
 │   └── roadmap.md
 ├── localdocs/
+│   ├── __init__.py
 │   ├── parser.py
 │   ├── chunker.py
 │   ├── indexer.py
@@ -165,64 +155,34 @@ localdocs-ai/
 │   ├── export.py
 │   └── models.py
 ├── sample_docs/
+│   ├── sample_note.txt
+│   └── sample_guide.md
 ├── exports/
 └── tests/
+    ├── test_parser.py
+    ├── test_chunker.py
+    ├── test_search.py
+    └── test_export.py
+```
+
+## Run Tests
+
+```bash
+pytest
 ```
 
 ## Roadmap
 
-### v0.1
+See `docs/roadmap.md` for the project roadmap.
 
-- PDF/TXT/Markdown support
-- Local TF-IDF search
-- Answers with sources
-- Basic summaries
-- Markdown export
-- Streamlit UI
-
-### v0.2
-
-- DOCX support
-- Improved UI
-- Better summaries
-- Configuration file
-- Better error handling
-
-### v0.3
-
-- Obsidian export
-- Anki flashcard export
-- Local embeddings
-- More robust indexing
-
-### v0.4
-
-- Research comparison mode
-- Study mode
-- Multi-project knowledge bases
-
-### v1.0
-
-- Stable API
-- Plugin system
-- More document formats
-- Desktop packaging
+v0.2 priorities include DOCX support, a better UI, better summary quality, a simple configuration file, and improved parsing/indexing errors.
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome. Good first contributions include tests, parser improvements, documentation updates, small UI improvements, and sample documents.
 
-Good first contributions may include:
-
-- Improving document parsing
-- Adding tests
-- Improving the Streamlit interface
-- Improving documentation
-- Adding sample documents
-- Improving Markdown export
-
-Please keep the project simple, local-first, and beginner-friendly.
+Please keep changes aligned with the v0.1 philosophy: local-first, simple, readable, and useful without a required API key.
 
 ## License
 
-This project is intended to use the MIT License.
+LocalDocs AI is released under the MIT License. See `LICENSE`.

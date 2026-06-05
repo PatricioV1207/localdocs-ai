@@ -1,0 +1,40 @@
+# LocalDocs AI Roadmap
+
+## v0.1
+
+- PDF, TXT, and Markdown support
+- Local TF-IDF search
+- Answers with source references
+- Extractive fallback without an OpenAI API key
+- Basic summaries
+- Markdown export
+- Streamlit MVP interface
+- Basic tests
+
+## v0.2
+
+- DOCX support
+- Better UI for document status and source inspection
+- Better summary quality
+- Simple configuration file
+- More helpful parsing and indexing errors
+
+## v0.3
+
+- Obsidian export
+- Anki flashcard export
+- Local embeddings option
+- Improved chunking strategies
+
+## v0.4
+
+- Research comparison mode
+- Study mode
+- Multi-project knowledge bases
+
+## v1.0
+
+- Stable Python API
+- Plugin system
+- More document formats
+- Desktop packaging
