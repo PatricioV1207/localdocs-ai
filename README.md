@@ -1,14 +1,37 @@
 # LocalDocs AI
 
+[![Tests](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
+![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
+![Local-first](https://img.shields.io/badge/local--first-yes-brightgreen.svg)
+
 LocalDocs AI is an open-source, local-first document intelligence app. It turns PDFs, DOCX files, text notes, and Markdown files into a private searchable knowledge base with cited answers, summaries, study questions, flashcards, and Markdown exports.
 
 Status: v0.3 implemented.
 
-## Why Local-First Matters
+## Why LocalDocs AI?
 
-People often keep useful knowledge in folders of notes, guides, manuals, and PDFs. A local-first workflow lets users search and reuse those documents without making a cloud service the default place where their information lives.
+Many people have useful knowledge scattered across PDFs, notes, manuals, and guides. LocalDocs AI helps make those documents searchable and reusable while keeping the default workflow on your machine.
 
-LocalDocs AI v0.3 keeps the app simple: documents are parsed locally, indexed locally with TF-IDF, and answered locally when no `OPENAI_API_KEY` is configured.
+The app works without an OpenAI API key. If `OPENAI_API_KEY` is configured, LocalDocs can optionally generate more natural answers and summaries, but answers are still based on retrieved document context.
+
+## Features
+
+- Parse PDF, DOCX, TXT, Markdown, and `.markdown` files.
+- Chunk documents with `word`, `paragraph`, or Markdown `heading` strategies.
+- Search locally with scikit-learn TF-IDF.
+- Ask questions and get cited answers.
+- Fall back to extractive answers without an API key.
+- Generate basic summaries.
+- Generate study questions and flashcards with source references.
+- Export summaries and Q&A history to Markdown.
+- Export an Obsidian-friendly Markdown vault.
+- Export Anki-compatible flashcards as TSV.
+- Configure behavior with `localdocs_config.toml`.
+
+## Not Included
+
+LocalDocs AI v0.3 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
 
 ## Supported Formats
 
@@ -17,82 +40,28 @@ LocalDocs AI v0.3 keeps the app simple: documents are parsed locally, indexed lo
 - TXT files
 - Markdown files (`.md` and `.markdown`)
 
-## Features in v0.3
+PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.
 
-- PDF parsing with page numbers when text is extractable
-- DOCX parsing from readable paragraphs
-- TXT parsing
-- Markdown and `.markdown` parsing
-- Configurable chunking strategies: word, paragraph, and Markdown heading-aware
-- Local TF-IDF search with scikit-learn
-- Question answering with source references
-- Extractive fallback when no OpenAI API key is configured
-- Optional OpenAI answer generation when `OPENAI_API_KEY` exists
-- Basic per-document summaries
-- Markdown export for summaries and Q&A history
-- Study question generation
-- Flashcard generation
-- Anki-compatible TSV flashcard export
-- Obsidian-friendly Markdown vault export
-- Streamlit interface with processed-document status and source display
-- Local `localdocs_config.toml` settings
-- Focused pytest coverage
-
-PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is intentionally out of scope for this release.
-
-## Not Included Yet
-
-v0.3 is not a final product. It does not include:
-
-- User accounts
-- Login or authentication
-- Cloud sync
-- Payments
-- OCR
-- Audio transcription
-- Image analysis
-- Advanced vector databases
-- Desktop packaging
-- Mobile app
-- Multi-user collaboration
-
-## Installation
-
-Clone the repository and enter the project folder:
+## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/localdocs-ai.git
+git clone https://github.com/PatricioV1207/localdocs-ai.git
 cd localdocs-ai
-```
-
-Create and activate a virtual environment:
-
-```bash
 python -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
-On Windows, activate it with:
+On Windows, activate the virtual environment with:
 
 ```bash
 .venv\Scripts\activate
 ```
 
-Install dependencies:
+Then open the Streamlit URL, upload documents or process the sample documents, ask questions, generate summaries, and use the study/export tools.
 
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-Run the Streamlit app:
-
-```bash
-streamlit run app.py
-```
-
-Then:
+## Example Workflow
 
 1. Upload PDF, DOCX, TXT, or Markdown documents.
 2. Click `Process uploaded documents`.
@@ -100,15 +69,24 @@ Then:
 4. Review the answer and cited sources.
 5. Generate summaries.
 6. Generate study questions and flashcards.
-7. Export summaries, Q&A history, study questions, an Anki TSV, or an Obsidian vault.
+7. Export Markdown notes, an Anki TSV, or an Obsidian vault.
 
-You can also click `Process sample documents` to try the app with files in `sample_docs/`.
+You can also click `Process sample documents` to try the files in `sample_docs/`.
+
+## Screenshots
+
+Screenshot placeholders and guidance live in [docs/screenshots](docs/screenshots/README.md).
+
+Suggested future screenshots:
+
+- Document upload and processing state
+- Answer with cited sources
+- Study Tools section
+- Exported Obsidian vault
 
 ## Configuration
 
-LocalDocs AI reads `localdocs_config.toml` from the project root. If the file is missing or invalid, the app uses sensible defaults and shows readable warnings in the sidebar.
-
-Default settings:
+LocalDocs AI reads `localdocs_config.toml` from the project root. If the file is missing or invalid, the app uses defaults and shows readable warnings in the sidebar.
 
 ```toml
 [chunking]
@@ -137,28 +115,17 @@ vault_dir = "exports/obsidian_vault"
 flashcards_file = "exports/flashcards.tsv"
 ```
 
-These values control chunking strategy, search result count, weak-result filtering, export locations, study tool limits, and whether OpenAI should be used when an API key exists.
-
 Chunking strategies:
 
-- `word`: default v0.1/v0.2 behavior, split by word count.
+- `word`: default behavior, split by word count.
 - `paragraph`: group nearby paragraphs into chunks.
 - `heading`: split Markdown by headings when possible, with paragraph fallback.
 
-## Study Tools
-
-After processing documents, use the `Study Tools` section to generate:
-
-- Flashcards with question, answer, and source reference.
-- Study questions with source references.
-- An Obsidian-compatible vault.
-- An Anki-compatible TSV file.
-
-The generators are intentionally simple and extractive in v0.3, so the app remains useful without an API key.
-
 ## Obsidian Export
 
-Click `Export Obsidian vault` in the app after processing documents. By default, LocalDocs creates:
+Process documents, optionally generate summaries, flashcards, and study questions, then click `Export Obsidian vault`.
+
+Default output:
 
 ```txt
 exports/obsidian_vault/
@@ -170,79 +137,73 @@ exports/obsidian_vault/
 └── Documents/
 ```
 
-Open that folder as a vault in Obsidian, or copy it into an existing vault. Obsidian does not need to be installed for the export to work; it is just a Markdown folder.
+Open that folder as a vault in Obsidian, or copy it into an existing vault. Obsidian is not required to create the export.
 
 ## Anki TSV Export
 
-Generate flashcards, then click `Export Anki TSV`. By default, the file is:
+Generate flashcards, then click `Export Anki TSV`.
+
+Default output:
 
 ```txt
 exports/flashcards.tsv
 ```
 
-In Anki, choose import, select the TSV file, and map the three fields to `Question`, `Answer`, and `Source`.
+Import the file into Anki as a tab-separated file and map the fields to question, answer, and source.
 
 ## Optional OpenAI Configuration
 
-LocalDocs AI works without an OpenAI API key.
+LocalDocs AI works without OpenAI.
 
-If you want optional LLM-generated answers and summaries, set:
+To enable optional LLM-generated answers and summaries:
 
 ```bash
 export OPENAI_API_KEY=your_api_key_here
 ```
 
-Or create a `.env` file:
+Or create a local `.env` file:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
 ```
 
-Even when OpenAI is enabled, answers are generated only from retrieved document chunks. If the retrieved chunks do not contain enough evidence, the app should say so.
+Do not commit `.env` files or API keys.
 
-## Example Workflow
+## Development
 
-Use the sample documents:
+Install dependencies:
 
-```txt
-sample_docs/
-├── sample_note.txt
-└── sample_guide.md
+```bash
+pip install -r requirements.txt
 ```
 
-Ask:
+Run tests:
 
-```txt
-What does LocalDocs AI use for local search?
+```bash
+pytest
 ```
 
-The app should return relevant context and sources, for example:
+If `pytest` is not on your shell path:
 
-```md
-Sources:
-- sample_note.txt, chunk 1
-- sample_guide.md, chunk 1
+```bash
+python -m pytest
 ```
+
+GitHub Actions runs the test suite on push and pull requests.
 
 ## Project Structure
 
 ```txt
 localdocs-ai/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── localdocs_config.toml
-├── CHANGELOG.md
-├── app.py
-├── AGENTS.md
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── workflows/
+│   └── pull_request_template.md
 ├── docs/
-│   ├── goal_v0.1.md
-│   ├── goal_v0.2.md
+│   ├── screenshots/
 │   ├── architecture.md
 │   └── roadmap.md
 ├── localdocs/
-│   ├── __init__.py
-│   ├── config.py
 │   ├── parser.py
 │   ├── chunker.py
 │   ├── indexer.py
@@ -253,60 +214,43 @@ localdocs-ai/
 │   ├── flashcards.py
 │   ├── study.py
 │   ├── obsidian.py
-│   └── models.py
+│   └── config.py
 ├── sample_docs/
-│   ├── sample_note.txt
-│   └── sample_guide.md
-├── exports/
-└── tests/
-    ├── test_config.py
-    ├── test_parser.py
-    ├── test_chunker.py
-    ├── test_search.py
-    ├── test_qa.py
-    ├── test_summarizer.py
-    ├── test_export.py
-    ├── test_flashcards.py
-    ├── test_study.py
-    └── test_obsidian.py
-```
-
-## Run Tests
-
-```bash
-pytest
-```
-
-If your shell does not expose `pytest` directly, run:
-
-```bash
-python -m pytest
+├── tests/
+├── app.py
+├── localdocs_config.toml
+├── CONTRIBUTING.md
+├── SECURITY.md
+├── CHANGELOG.md
+└── README.md
 ```
 
 ## Roadmap
 
-See `docs/roadmap.md` for the project roadmap.
+See [docs/roadmap.md](docs/roadmap.md).
 
-v0.4 priorities include research comparison mode, richer study workflows, and multi-project knowledge bases.
+v0.4 is planned to focus on research comparison mode, richer study workflows, and multi-project knowledge bases while preserving local-first defaults.
 
-## Current v0.3 Limitations
+## Current Limitations
 
-- PDF parsing depends on extractable text; scanned PDFs are skipped unless they already contain a text layer.
+- PDF parsing depends on extractable text.
 - DOCX parsing reads normal paragraphs only; legacy `.doc` files are not supported.
-- Search uses TF-IDF, so it is keyword-oriented rather than semantic.
-- Answers use retrieved chunks only. If retrieval is weak, the app says there is not enough evidence.
-- Flashcards and study questions are simple extractive outputs, not a full tutoring system.
+- Search is keyword-oriented TF-IDF, not semantic search.
+- Flashcards and study questions are simple extractive outputs.
 - Obsidian export is a Markdown folder export only.
 - Anki export is TSV only.
-- Streamlit session state is temporary. Export summaries and Q&A history to Markdown if you want to keep them.
-- OpenAI integration is optional and falls back to local extractive behavior if unavailable.
+- Streamlit session state is temporary.
 
 ## Contributing
 
-Contributions are welcome. Good first contributions include tests, parser improvements, documentation updates, small UI improvements, and sample documents.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-Please keep changes aligned with the project philosophy: local-first, simple, readable, and useful without a required API key.
+Please keep changes local-first, simple, and useful without requiring an API key.
+
+## Security
+
+Please read [SECURITY.md](SECURITY.md) before reporting vulnerabilities. Do not post private documents, secrets, or API keys in public issues.
 
 ## License
 
-LocalDocs AI is released under the MIT License. See `LICENSE`.
+LocalDocs AI is released under the MIT License. See [LICENSE](LICENSE).

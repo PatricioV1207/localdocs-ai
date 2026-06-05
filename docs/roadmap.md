@@ -29,9 +29,19 @@
 
 ## v0.4 - Planned
 
+v0.4 should deepen existing study and research workflows without changing the local-first foundation.
+
 - Research comparison mode
-- Richer study mode
-- Multi-project knowledge bases
+- Richer study mode for reviewing generated questions and flashcards
+- Multi-project knowledge bases for keeping separate document sets organized
+
+Not planned for v0.4 unless explicitly scoped first:
+
+- Authentication or user accounts
+- Cloud sync
+- OCR
+- Vector databases or embeddings
+- Desktop or mobile packaging
 
 ## v1.0
 

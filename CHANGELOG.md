@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Contributor guide.
+- Security policy.
+- GitHub issue and pull request templates.
+- GitHub Actions test workflow.
+- Screenshot placeholder documentation.
+
+### Improved
+
+- README structure for open-source contributors.
+- Roadmap clarity for v0.4 plans.
+- Ignore rules for local caches, build artifacts, secrets, and generated exports.
+
 ## v0.3.0
 
 ### Added
