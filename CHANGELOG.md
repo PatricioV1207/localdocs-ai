@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.3.0
+
+### Added
+
+- Obsidian vault export.
+- Anki-compatible flashcard export.
+- Study question generation.
+- Configurable chunking strategies.
+
+### Improved
+
+- Export workflow.
+- Study-oriented document reuse.
+- Documentation.
+
+### Not Included
+
+- Vector databases.
+- Local embeddings.
+- OCR.
+- Multi-user accounts.
+- Cloud sync.
+- Desktop packaging.
+
 ## v0.2.0
 
 ### Added

@@ -9,10 +9,13 @@ from dotenv import load_dotenv
 from localdocs.chunker import chunk_blocks
 from localdocs.config import DEFAULT_CONFIG_PATH, load_config
 from localdocs.export import export_qa_history, export_summaries
+from localdocs.flashcards import export_anki_tsv, generate_flashcards
 from localdocs.indexer import build_index
+from localdocs.obsidian import export_obsidian_vault
 from localdocs.parser import parse_path, parse_uploaded_file
 from localdocs.qa import answer_question
 from localdocs.search import search
+from localdocs.study import export_study_questions_markdown, generate_study_questions
 from localdocs.summarizer import summarize_documents
 
 SAMPLE_DOCS_DIR = Path("sample_docs")
@@ -34,6 +37,11 @@ def main() -> None:
         for warning in config.warnings:
             st.warning(warning)
 
+        chunk_strategy = st.selectbox(
+            "Chunking strategy",
+            options=["word", "paragraph", "heading"],
+            index=["word", "paragraph", "heading"].index(config.chunking.strategy),
+        )
         chunk_size = st.number_input(
             "Chunk size",
             min_value=1,
@@ -72,6 +80,8 @@ def main() -> None:
         else:
             st.caption("Using local extractive answers.")
         st.caption(f"Export folder: {config.exports.export_dir}")
+        st.caption(f"Obsidian vault: {config.obsidian.vault_dir}")
+        st.caption(f"Anki TSV: {config.anki.flashcards_file}")
 
     st.subheader("Document Upload")
     st.caption("Supported formats: PDF, DOCX, TXT, Markdown.")
@@ -89,13 +99,13 @@ def main() -> None:
             else:
                 blocks, errors = _parse_uploads(uploaded_files)
                 _show_errors(errors)
-                _store_index(blocks, int(chunk_size), int(overlap))
+                _store_index(blocks, int(chunk_size), int(overlap), chunk_strategy)
 
     with sample_col:
         if st.button("Process sample documents", use_container_width=True):
             blocks, errors = _parse_sample_docs()
             _show_errors(errors)
-            _store_index(blocks, int(chunk_size), int(overlap))
+            _store_index(blocks, int(chunk_size), int(overlap), chunk_strategy)
 
     _show_index_status()
 
@@ -140,6 +150,9 @@ def main() -> None:
     _show_summaries()
 
     st.divider()
+    _show_study_tools(config)
+
+    st.divider()
     st.subheader("Export")
     if st.button("Export summaries and Q&A history", use_container_width=True):
         if not st.session_state.summaries and not st.session_state.qa_history:
@@ -158,6 +171,8 @@ def _init_state() -> None:
         "index": None,
         "qa_history": [],
         "summaries": [],
+        "flashcards": [],
+        "study_questions": [],
         "last_results": [],
     }
     for key, value in defaults.items():
@@ -198,7 +213,7 @@ def _parse_sample_docs() -> tuple[list, list[str]]:
     return blocks, errors
 
 
-def _store_index(blocks: list, chunk_size: int, overlap: int) -> None:
+def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> None:
     if overlap >= chunk_size:
         st.error("Chunk overlap must be smaller than chunk size.")
         return
@@ -210,12 +225,19 @@ def _store_index(blocks: list, chunk_size: int, overlap: int) -> None:
         st.warning("No text was found in the selected documents.")
         return
 
-    chunks = chunk_blocks(blocks, chunk_size=chunk_size, overlap=overlap)
+    try:
+        chunks = chunk_blocks(blocks, chunk_size=chunk_size, overlap=overlap, strategy=strategy)
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+
     st.session_state.chunks = chunks
     st.session_state.document_names = sorted({block.file_name for block in blocks})
     st.session_state.index = build_index(chunks)
     st.session_state.qa_history = []
     st.session_state.summaries = []
+    st.session_state.flashcards = []
+    st.session_state.study_questions = []
     st.session_state.last_results = []
 
     if chunks and st.session_state.index.is_ready:
@@ -288,6 +310,92 @@ def _show_summaries() -> None:
                     st.markdown(f"- {citation.label()}")
             else:
                 st.markdown("- No sources available.")
+
+
+def _show_study_tools(config) -> None:
+    st.subheader("Study Tools")
+
+    if not st.session_state.chunks:
+        st.info("Process documents before generating flashcards or study questions.")
+    else:
+        flashcard_col, question_col = st.columns(2)
+        with flashcard_col:
+            if st.button("Generate flashcards", use_container_width=True):
+                st.session_state.flashcards = generate_flashcards(
+                    st.session_state.chunks,
+                    max_cards=config.study.max_flashcards,
+                )
+                if st.session_state.flashcards:
+                    st.success(f"Generated {len(st.session_state.flashcards)} flashcard(s).")
+                else:
+                    st.warning("No flashcards could be generated from the current chunks.")
+        with question_col:
+            if st.button("Generate study questions", use_container_width=True):
+                st.session_state.study_questions = generate_study_questions(
+                    st.session_state.chunks,
+                    max_questions=config.study.max_questions,
+                )
+                if st.session_state.study_questions:
+                    st.success(f"Generated {len(st.session_state.study_questions)} study question(s).")
+                else:
+                    st.warning("No study questions could be generated from the current chunks.")
+
+    _show_flashcards()
+    _show_study_questions()
+
+    export_col, anki_col, question_export_col = st.columns(3)
+    with export_col:
+        if st.button("Export Obsidian vault", use_container_width=True):
+            if not st.session_state.chunks:
+                st.warning("Process documents before exporting an Obsidian vault.")
+            else:
+                vault_path = export_obsidian_vault(
+                    config.obsidian.vault_dir,
+                    st.session_state.chunks,
+                    summaries=st.session_state.summaries,
+                    qa_history=st.session_state.qa_history,
+                    flashcards=st.session_state.flashcards,
+                    study_questions=st.session_state.study_questions,
+                )
+                st.success(f"Exported Obsidian vault to {vault_path}.")
+    with anki_col:
+        if st.button("Export Anki TSV", use_container_width=True):
+            if not st.session_state.flashcards:
+                st.warning("Generate flashcards before exporting Anki TSV.")
+            else:
+                anki_path = export_anki_tsv(st.session_state.flashcards, path=config.anki.flashcards_file)
+                st.success(f"Exported Anki TSV to {anki_path}.")
+    with question_export_col:
+        if st.button("Export study questions", use_container_width=True):
+            if not st.session_state.study_questions:
+                st.warning("Generate study questions before exporting them.")
+            else:
+                questions_path = export_study_questions_markdown(
+                    st.session_state.study_questions,
+                    export_dir=config.exports.export_dir,
+                )
+                st.success(f"Exported study questions to {questions_path}.")
+
+
+def _show_flashcards() -> None:
+    if not st.session_state.flashcards:
+        return
+
+    with st.expander("Flashcards preview", expanded=True):
+        for card in st.session_state.flashcards:
+            st.markdown(f"**Q:** {card.question}")
+            st.markdown(f"**A:** {card.answer}")
+            st.caption(f"Source: {card.citation.label()}")
+
+
+def _show_study_questions() -> None:
+    if not st.session_state.study_questions:
+        return
+
+    with st.expander("Study questions preview", expanded=True):
+        for question in st.session_state.study_questions:
+            st.markdown(f"- {question.question}")
+            st.caption(f"Source: {question.citation.label()}")
 
 
 def _show_errors(errors: list[str]) -> None:

@@ -6,10 +6,15 @@ def test_load_config_uses_defaults_when_missing(tmp_path):
 
     assert config.chunking.chunk_size == 220
     assert config.chunking.chunk_overlap == 40
+    assert config.chunking.strategy == "word"
     assert config.search.top_k == 4
     assert config.search.minimum_score == 0.05
     assert config.exports.export_dir == "exports"
     assert config.llm.use_openai_if_available is True
+    assert config.study.max_flashcards == 20
+    assert config.study.max_questions == 20
+    assert config.obsidian.vault_dir == "exports/obsidian_vault"
+    assert config.anki.flashcards_file == "exports/flashcards.tsv"
     assert config.warnings == []
 
 
@@ -18,6 +23,7 @@ def test_load_config_reads_valid_values(tmp_path):
     path.write_text(
         """
 [chunking]
+strategy = "paragraph"
 chunk_size = 120
 chunk_overlap = 20
 
@@ -30,6 +36,16 @@ export_dir = "tmp_exports"
 
 [llm]
 use_openai_if_available = false
+
+[study]
+max_flashcards = 7
+max_questions = 8
+
+[obsidian]
+vault_dir = "custom_vault"
+
+[anki]
+flashcards_file = "cards.tsv"
 """,
         encoding="utf-8",
     )
@@ -38,10 +54,15 @@ use_openai_if_available = false
 
     assert config.chunking.chunk_size == 120
     assert config.chunking.chunk_overlap == 20
+    assert config.chunking.strategy == "paragraph"
     assert config.search.top_k == 6
     assert config.search.minimum_score == 0.1
     assert config.exports.export_dir == "tmp_exports"
     assert config.llm.use_openai_if_available is False
+    assert config.study.max_flashcards == 7
+    assert config.study.max_questions == 8
+    assert config.obsidian.vault_dir == "custom_vault"
+    assert config.anki.flashcards_file == "cards.tsv"
     assert config.warnings == []
 
 
@@ -50,6 +71,7 @@ def test_load_config_warns_and_uses_defaults_for_invalid_values(tmp_path):
     path.write_text(
         """
 [chunking]
+strategy = "semantic"
 chunk_size = "large"
 chunk_overlap = -1
 
@@ -62,6 +84,16 @@ export_dir = ""
 
 [llm]
 use_openai_if_available = "yes"
+
+[study]
+max_flashcards = 0
+max_questions = "many"
+
+[obsidian]
+vault_dir = ""
+
+[anki]
+flashcards_file = ""
 """,
         encoding="utf-8",
     )
@@ -70,11 +102,16 @@ use_openai_if_available = "yes"
 
     assert config.chunking.chunk_size == 220
     assert config.chunking.chunk_overlap == 40
+    assert config.chunking.strategy == "word"
     assert config.search.top_k == 4
     assert config.search.minimum_score == 0.05
     assert config.exports.export_dir == "exports"
     assert config.llm.use_openai_if_available is True
-    assert len(config.warnings) >= 6
+    assert config.study.max_flashcards == 20
+    assert config.study.max_questions == 20
+    assert config.obsidian.vault_dir == "exports/obsidian_vault"
+    assert config.anki.flashcards_file == "exports/flashcards.tsv"
+    assert len(config.warnings) >= 11
 
 
 def test_load_config_warns_and_uses_defaults_for_invalid_toml(tmp_path):

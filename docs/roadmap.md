@@ -19,17 +19,18 @@
 - More helpful parsing and indexing errors
 - More tests for parsing, QA, citations, summaries, export, and config
 
-## v0.3 - Next
+## v0.3 - Completed
 
 - Obsidian export
 - Anki flashcard export
-- Local embeddings option
+- Study question generation
 - Improved chunking strategies
+- Study Tools UI section
 
-## v0.4
+## v0.4 - Planned
 
 - Research comparison mode
-- Study mode
+- Richer study mode
 - Multi-project knowledge bases
 
 ## v1.0

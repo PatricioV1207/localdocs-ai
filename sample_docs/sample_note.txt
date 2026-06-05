@@ -1,5 +1,7 @@
 LocalDocs AI is a local-first document intelligence app.
 
-The v0.2 app processes PDF, DOCX, TXT, and Markdown documents on the user's machine. It uses simple TF-IDF search so the app remains useful without a cloud service or an OpenAI API key.
+The v0.3 app processes PDF, DOCX, TXT, and Markdown documents on the user's machine. It uses simple TF-IDF search so the app remains useful without a cloud service or an OpenAI API key.
 
 Every answer should cite the source document and chunk used as evidence.
+
+Users can also generate study questions, flashcards, an Obsidian vault, and an Anki-compatible TSV export.

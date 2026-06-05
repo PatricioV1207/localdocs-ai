@@ -106,3 +106,20 @@ class DocumentSummary:
     citations: list[Citation] = field(default_factory=list)
     used_llm: bool = False
     note: str = ""
+
+
+@dataclass(frozen=True)
+class Flashcard:
+    """Simple question-answer card with a source citation."""
+
+    question: str
+    answer: str
+    citation: Citation
+
+
+@dataclass(frozen=True)
+class StudyQuestion:
+    """Generated study question with a source citation."""
+
+    question: str
+    citation: Citation
