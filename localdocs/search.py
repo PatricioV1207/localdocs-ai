@@ -12,7 +12,7 @@ from localdocs.models import SearchResult
 def search(index: LocalIndex, query: str, top_k: int = 5, min_score: float = 0.0) -> list[SearchResult]:
     """Search indexed chunks with a text query."""
 
-    if not query.strip() or not index.is_ready:
+    if top_k <= 0 or not query.strip() or not index.is_ready:
         return []
 
     query_vector = index.vectorizer.transform([query])

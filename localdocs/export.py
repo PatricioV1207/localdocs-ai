@@ -103,11 +103,23 @@ def _coerce_answer(item: Answer | Mapping) -> Answer:
     if isinstance(item, Answer):
         return item
 
-    citations = item.get("citations", [])
+    citations = [_coerce_citation(citation) for citation in item.get("citations", [])]
     return Answer(
         question=str(item.get("question", "")),
         answer=str(item.get("answer", "")),
-        citations=list(citations),
+        citations=citations,
+    )
+
+
+def _coerce_citation(item: Citation | Mapping) -> Citation:
+    if isinstance(item, Citation):
+        return item
+
+    return Citation(
+        file_name=str(item.get("file_name", "")),
+        chunk_index=int(item.get("chunk_index", 0)),
+        page_number=item.get("page_number"),
+        file_path=str(item.get("file_path", "")),
     )
 
 

@@ -11,7 +11,7 @@ LocalDocs AI v0.1 is a small Streamlit app backed by plain Python modules. The g
 - Empty files and empty PDF pages are skipped.
 - PDF blocks keep the page number so answers can cite pages.
 
-Unsupported formats raise readable errors. v0.1 intentionally does not include DOCX, OCR, image parsing, audio, or web import.
+Unsupported formats raise readable errors. PDF support depends on extractable text, so scanned PDFs without a text layer are out of scope for v0.1. v0.1 intentionally does not include DOCX, OCR, image parsing, audio, or web import.
 
 ## Chunking
 
@@ -38,6 +38,8 @@ Sources:
 - example.pdf, page 3, chunk 5
 - notes.md, chunk 2
 ```
+
+If OpenAI is configured but unavailable or errors, LocalDocs falls back to the same extractive answer path and keeps a short note for the Streamlit UI.
 
 ## Summaries and Export
 

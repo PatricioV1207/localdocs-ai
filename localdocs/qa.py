@@ -35,7 +35,7 @@ def answer_question(
     api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
 
     if api_key:
-        llm_answer = _try_openai_answer(question, selected_results, api_key, model)
+        llm_answer, llm_error = _try_openai_answer(question, selected_results, api_key, model)
         if llm_answer:
             return Answer(
                 question=question,
@@ -45,6 +45,8 @@ def answer_question(
                 used_llm=True,
                 enough_evidence=True,
             )
+    else:
+        llm_error = ""
 
     return Answer(
         question=question,
@@ -53,6 +55,7 @@ def answer_question(
         context=selected_results,
         used_llm=False,
         enough_evidence=True,
+        note=llm_error,
     )
 
 
@@ -61,7 +64,7 @@ def _try_openai_answer(
     results: list[SearchResult],
     api_key: str,
     model: str,
-) -> str | None:
+) -> tuple[str | None, str]:
     try:
         from openai import OpenAI
 
@@ -85,9 +88,9 @@ def _try_openai_answer(
             ],
         )
         answer = response.choices[0].message.content or ""
-        return answer.strip() or None
-    except Exception:
-        return None
+        return answer.strip() or None, ""
+    except Exception as exc:
+        return None, f"OpenAI answer generation failed, so LocalDocs used extractive fallback: {exc}"
 
 
 def _extractive_answer(question: str, results: list[SearchResult]) -> str:

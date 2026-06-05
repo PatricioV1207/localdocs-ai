@@ -25,6 +25,8 @@ LocalDocs AI v0.1 keeps the first version simple: documents are parsed locally, 
 - Streamlit interface
 - Focused pytest coverage
 
+PDF support in v0.1 means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is intentionally out of scope for this release.
+
 ## Not Included Yet
 
 v0.1 is not a final product. It does not include:
@@ -171,11 +173,25 @@ localdocs-ai/
 pytest
 ```
 
+If your shell does not expose `pytest` directly, run:
+
+```bash
+python -m pytest
+```
+
 ## Roadmap
 
 See `docs/roadmap.md` for the project roadmap.
 
 v0.2 priorities include DOCX support, a better UI, better summary quality, a simple configuration file, and improved parsing/indexing errors.
+
+## Current v0.1 Limitations
+
+- PDF parsing depends on extractable text; scanned PDFs are skipped unless they already contain a text layer.
+- Search uses TF-IDF, so it is keyword-oriented rather than semantic.
+- Answers use retrieved chunks only. If retrieval is weak, the app says there is not enough evidence.
+- Streamlit session state is temporary. Export summaries and Q&A history to Markdown if you want to keep them.
+- OpenAI integration is optional and falls back to local extractive behavior if unavailable.
 
 ## Contributing
 

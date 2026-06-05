@@ -36,3 +36,18 @@ def test_export_qa_history_writes_markdown(tmp_path):
     assert "# LocalDocs AI Q&A History" in content
     assert "**Q:** What does it support?" in content
     assert "- guide.md, chunk 2" in content
+
+
+def test_export_qa_history_accepts_mapping_citations(tmp_path):
+    answers = [
+        {
+            "question": "Where is the PDF evidence?",
+            "answer": "The evidence is on page 3.",
+            "citations": [{"file_name": "manual.pdf", "page_number": 3, "chunk_index": 5}],
+        }
+    ]
+
+    path = export_qa_history(answers, export_dir=tmp_path)
+
+    content = path.read_text(encoding="utf-8")
+    assert "- manual.pdf, page 3, chunk 5" in content

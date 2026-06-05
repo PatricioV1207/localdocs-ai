@@ -63,8 +63,8 @@ def main() -> None:
     question = st.text_input("Question", placeholder="What do these documents say about local search?")
 
     if st.button("Ask", use_container_width=True):
-        if not st.session_state.index:
-            st.warning("Process documents before asking a question.")
+        if not _index_ready():
+            st.warning("Process documents with searchable text before asking a question.")
         elif not question.strip():
             st.warning("Enter a question first.")
         else:
@@ -157,8 +157,10 @@ def _store_index(blocks: list, chunk_size: int, overlap: int) -> None:
     st.session_state.summaries = []
     st.session_state.last_results = []
 
-    if chunks:
+    if chunks and st.session_state.index.is_ready:
         st.success(f"Processed {len(st.session_state.document_names)} document(s) into {len(chunks)} chunk(s).")
+    elif chunks:
+        st.warning("Parsed the documents into chunks, but no searchable terms were found.")
     else:
         st.warning("Parsed the documents, but no searchable chunks were created.")
 
@@ -166,6 +168,13 @@ def _store_index(blocks: list, chunk_size: int, overlap: int) -> None:
 def _show_index_status() -> None:
     if not st.session_state.chunks:
         st.info("Upload documents or process the sample documents to build a local index.")
+        return
+
+    if not _index_ready():
+        st.warning(
+            f"Current documents: {len(st.session_state.document_names)} document(s), "
+            f"{len(st.session_state.chunks)} chunk(s). Search is not ready because no searchable terms were found."
+        )
         return
 
     st.info(
@@ -181,6 +190,8 @@ def _show_latest_answer() -> None:
     answer = st.session_state.qa_history[-1]
     st.markdown(answer.answer)
     st.caption("Answer mode: OpenAI" if answer.used_llm else "Answer mode: local extractive")
+    if getattr(answer, "note", ""):
+        st.caption(answer.note)
 
     st.markdown("**Sources:**")
     if answer.citations:
@@ -191,7 +202,7 @@ def _show_latest_answer() -> None:
 
     if st.checkbox("Show relevant chunks"):
         for result in st.session_state.last_results:
-            with st.expander(f"{result.file_name} | score {result.score:.3f} | chunk {result.chunk_index}"):
+            with st.expander(f"{result.source_label()} | score {result.score:.3f}"):
                 st.write(result.text)
 
 
@@ -202,6 +213,8 @@ def _show_summaries() -> None:
     for summary in st.session_state.summaries:
         with st.expander(summary.file_name, expanded=True):
             st.write(summary.summary)
+            if getattr(summary, "note", ""):
+                st.caption(summary.note)
             st.markdown("**Sources:**")
             if summary.citations:
                 for citation in summary.citations:
@@ -213,6 +226,11 @@ def _show_summaries() -> None:
 def _show_errors(errors: list[str]) -> None:
     for error in errors:
         st.error(error)
+
+
+def _index_ready() -> bool:
+    index = st.session_state.index
+    return bool(index and index.is_ready)
 
 
 if __name__ == "__main__":

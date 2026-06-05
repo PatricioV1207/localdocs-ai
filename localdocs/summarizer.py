@@ -26,8 +26,9 @@ def summarize_documents(
         citations = [Citation.from_chunk(chunk) for chunk in document_chunks[:2]]
         summary_text = None
         used_llm = False
+        note = ""
         if api_key:
-            summary_text = _try_openai_summary(file_name, document_chunks, api_key, model)
+            summary_text, note = _try_openai_summary(file_name, document_chunks, api_key, model)
             used_llm = summary_text is not None
 
         if not summary_text:
@@ -40,6 +41,7 @@ def summarize_documents(
                 summary=summary_text,
                 citations=citations,
                 used_llm=used_llm,
+                note=note,
             )
         )
 
@@ -51,7 +53,7 @@ def _try_openai_summary(
     chunks: list[DocumentChunk],
     api_key: str,
     model: str,
-) -> str | None:
+) -> tuple[str | None, str]:
     try:
         from openai import OpenAI
 
@@ -76,10 +78,10 @@ def _try_openai_summary(
         )
         content = (response.choices[0].message.content or "").strip()
         if not content:
-            return None
-        return f"{file_name}: {content}"
-    except Exception:
-        return None
+            return None, "OpenAI summary generation returned an empty response, so LocalDocs used extractive fallback."
+        return f"{file_name}: {content}", ""
+    except Exception as exc:
+        return None, f"OpenAI summary generation failed, so LocalDocs used extractive fallback: {exc}"
 
 
 def _extractive_summary(file_name: str, chunks: list[DocumentChunk], sentence_limit: int = 3) -> str:

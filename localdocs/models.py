@@ -56,6 +56,9 @@ class SearchResult:
     def chunk_index(self) -> int:
         return self.chunk.chunk_index
 
+    def source_label(self) -> str:
+        return Citation.from_chunk(self.chunk).label()
+
 
 @dataclass(frozen=True)
 class Citation:
@@ -91,6 +94,7 @@ class Answer:
     context: list[SearchResult] = field(default_factory=list)
     used_llm: bool = False
     enough_evidence: bool = True
+    note: str = ""
 
 
 @dataclass
@@ -101,3 +105,4 @@ class DocumentSummary:
     summary: str
     citations: list[Citation] = field(default_factory=list)
     used_llm: bool = False
+    note: str = ""
