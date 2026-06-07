@@ -1,6 +1,6 @@
-# LocalDocs AI v0.3.2 Architecture
+# LocalDocs AI v0.3.3 Architecture
 
-LocalDocs AI v0.3.2 is a small Streamlit app backed by plain Python modules. The goal is to keep the v0.3 study/export workflows while improving local answer, study-content, and CI reliability.
+LocalDocs AI v0.3.3 is a small Streamlit app backed by plain Python modules. This bugfix release keeps the v0.3 study/export workflows while improving concept quality and local Spanish technical-document answers.
 
 ## Parsing
 
@@ -18,9 +18,11 @@ Unsupported formats raise readable errors. PDF support depends on extractable te
 
 `localdocs/cleaning.py` normalizes parsed text and provides shared quality helpers for local extractive workflows.
 
-The cleaning layer removes or reduces obvious noise such as repeated PDF headers and footers, standalone page numbers, copyright lines, excessive underscores, table-of-contents-like text, repeated document codes, and very low-information lines. PDF parsing detects repeated lines across pages before cleaning individual page blocks.
+The cleaning layer removes or reduces obvious noise such as repeated PDF headers and footers, standalone page numbers, copyright lines, excessive underscores, table-of-contents-like text, legal/contact sections, repeated document codes, and very low-information lines. PDF parsing detects repeated lines across pages before cleaning individual page blocks.
 
 Summaries, local QA, flashcards, and study questions use quality scores to prefer informative chunks. Low-value chunks can still be indexed for search, but generation tools avoid them unless there is no better content.
+
+`localdocs/concepts.py` provides one deterministic concept pipeline for QA and study tools. It combines headings, definition subjects, bold-like text, bounded noun phrases, and known English/Spanish technical patterns, then rejects weak words, sentence fragments, legal/commercial text, and broken OCR.
 
 ## Chunking
 
@@ -50,7 +52,7 @@ TF-IDF is still used in v0.3 because it is local, fast, dependency-light, unders
 
 `localdocs/qa.py` answers questions using retrieved chunks only.
 
-When `OPENAI_API_KEY` is not configured, the app returns a concise extractive answer from the most relevant informative sentences. When an API key exists, the app may ask OpenAI to write a concise answer, but the prompt restricts the answer to retrieved document context.
+When `OPENAI_API_KEY` is not configured, the app detects question type and requested concepts, selects complete high-quality source sentences, and joins them with minimal language-aware framing. For multi-concept Spanish definition questions, it selects a definition for each concept and an additional circuit relationship when available. This remains heuristic and extractive: it does not invent bridging facts. When an API key exists, the app may ask OpenAI to write a concise answer, but the prompt restricts the answer to retrieved document context.
 
 If search results are missing or weak, the answer says it could not find enough strong evidence in the documents. Every successful answer includes citations such as:
 
@@ -68,9 +70,9 @@ If OpenAI is configured but unavailable or returns an authentication, billing, q
 
 ## Flashcards and Study Questions
 
-`localdocs/flashcards.py` generates simple extractive flashcards from meaningful multi-word concepts and informative sentences. Generic metadata terms are rejected, duplicate card questions are collapsed, and each flashcard includes a question, answer, and citation. `export_anki_tsv()` writes Anki-compatible tab-separated rows with three fields: question, answer, and source.
+`localdocs/flashcards.py` generates simple extractive flashcards from meaningful multi-word concepts and their strongest supporting sentences. Spanish sources produce Spanish questions. Generic metadata terms are rejected, duplicate concepts are collapsed, and each flashcard includes a question, answer, and citation. `export_anki_tsv()` writes Anki-compatible tab-separated rows with three fields: question, answer, and source.
 
-`localdocs/study.py` generates simple study questions from meaningful Markdown headings or bounded multi-word technical phrases. Expanded English and Spanish weak-term lists prevent questions based on publisher names, instructions, page metadata, or isolated generic words. Each question includes a source citation. Study questions can also be exported to Markdown.
+`localdocs/study.py` generates simple study questions from the shared concept pipeline. Language-aware templates use the supporting sentence to choose definition, function, recommendation, condition, risk, or importance wording. Expanded English and Spanish weak-term lists prevent questions based on publisher names, instructions, page metadata, broken fragments, or isolated generic words. Each question includes a source citation. Study questions can also be exported to Markdown.
 
 These tools are intentionally local and lightweight in v0.3. They do not build a full learning platform.
 

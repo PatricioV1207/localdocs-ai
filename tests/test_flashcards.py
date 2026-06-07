@@ -100,7 +100,7 @@ def test_generate_flashcards_rejects_weak_terms_and_deduplicates_concepts():
     cards = generate_flashcards(chunks, max_cards=10)
 
     assert len(cards) == 1
-    assert "Válvula antirretorno" in cards[0].question
+    assert "válvula antirretorno" in cards[0].question
     assert cards[0].citation.file_name == "manual_es.pdf"
     assert cards[0].citation.chunk_index in {2, 3}
     assert "Festo" not in cards[0].question

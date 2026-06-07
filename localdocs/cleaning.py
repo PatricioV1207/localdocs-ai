@@ -13,12 +13,21 @@ LOW_VALUE_PATTERNS = [
     r"\bisbn\b",
     r"\btable of contents\b",
     r"\bcontents\b",
+    r"\b[ií]ndice\b",
     r"\breferences\b",
     r"\bbibliography\b",
     r"\bpublisher\b",
     r"\bpublished by\b",
     r"\bwww\.",
     r"\bdoi\b",
+    r"\binformaci[oó]n legal\b",
+    r"\baviso legal\b",
+    r"\bcondiciones marco\b",
+    r"\bdatos de contacto\b",
+    r"\btel[eé]fono\b",
+    r"\bdirecci[oó]n\b",
+    r"\bproductos?\b",
+    r"\bmarketing\b",
 ]
 
 WEAK_TERMS = {
@@ -26,33 +35,56 @@ WEAK_TERMS = {
     "also",
     "author",
     "authors",
+    "autor",
     "autores",
+    "actualizado",
+    "antes",
+    "aplicaciones",
+    "aplicación",
+    "canal",
+    "cat",
+    "ciente",
     "chapter",
     "como",
     "cómo",
     "con",
+    "componente",
+    "componentes",
+    "condiciones",
+    "contacto",
     "content",
     "contenido",
+    "contenidos",
     "contents",
     "copyright",
     "cual",
     "cuál",
     "cuando",
     "cuándo",
+    "datos",
     "didactic",
     "didáctico",
     "didácticos",
+    "dirección",
     "document",
     "documents",
+    "documento",
+    "documentos",
     "donde",
     "dónde",
     "edition",
+    "durante",
+    "ello",
     "ejercicio",
     "ejercicios",
+    "equipo",
+    "equipos",
+    "estaría",
     "estudiante",
     "estudiantes",
     "festo",
     "figure",
+    "figura",
     "file",
     "files",
     "folder",
@@ -65,9 +97,20 @@ WEAK_TERMS = {
     "important",
     "importancia",
     "importante",
+    "implementación",
+    "información",
+    "igualada",
+    "legal",
+    "lleida",
     "localdocs",
+    "manresa",
+    "marco",
+    "mostrados",
+    "muestra",
+    "muestras",
     "note",
     "notes",
+    "observar",
     "page",
     "pages",
     "manual",
@@ -76,11 +119,16 @@ WEAK_TERMS = {
     "medida",
     "medidas",
     "pagina",
+    "paginas",
     "página",
     "páginas",
     "para",
+    "permitido",
     "por",
     "press",
+    "presentan",
+    "producto",
+    "productos",
     "publisher",
     "publishing",
     "question",
@@ -92,21 +140,37 @@ WEAK_TERMS = {
     "referencia",
     "referencias",
     "review",
+    "ripoll",
     "rights",
     "section",
+    "smc",
+    "solamente",
     "solution",
+    "solución",
     "solutions",
     "soluciones",
+    "solo",
+    "sólo",
     "source",
     "student",
     "students",
     "table",
+    "tabla",
+    "tecnical",
+    "teléfono",
     "text",
     "this",
+    "todo",
     "una",
+    "unas",
     "unicamente",
+    "uno",
+    "unos",
+    "usuario",
+    "usuarios",
     "únicamente",
     "weber",
+    "www",
     "with",
 }
 
@@ -223,31 +287,46 @@ TECHNICAL_HINTS = {
     "actuators",
     "air",
     "aire",
+    "anki",
     "antirretorno",
+    "categoría",
+    "categoria",
     "circuit",
     "circuits",
     "circuito",
     "circuitos",
+    "chunking",
     "compressed",
     "comprimido",
     "control",
+    "descarga",
+    "eléctrica",
     "eléctrico",
     "eléctricos",
     "elevadora",
     "emergencia",
+    "evaluación",
+    "evacuación",
+    "iso",
+    "nivel",
     "neumática",
     "neumático",
     "neumáticos",
+    "obsidian",
     "pneumatic",
     "plataforma",
     "parada",
     "pressure",
+    "prestaciones",
     "presión",
+    "prevención",
     "relé",
     "relés",
     "retrieval",
     "riesgo",
     "riesgos",
+    "reducción",
+    "residual",
     "safety",
     "search",
     "seguridad",
@@ -257,10 +336,14 @@ TECHNICAL_HINTS = {
     "sistemas",
     "system",
     "systems",
+    "técnica",
     "unidad",
+    "vault",
     "base",
     "knowledge",
+    "flashcards",
     "searchable",
+    "strategies",
     "válvula",
     "válvulas",
     "valve",
@@ -281,9 +364,20 @@ PREFERRED_SECTION_PATTERNS = [
     r"\bcomponentes?\b",
     r"\bejercicios?\b",
     r"\bt[eé]cnic[oa]s?\b",
+    r"\bfunciones de seguridad t[ií]picas\b",
+    r"\bdescarga segura del sistema\b",
+    r"\bdescarga segura del actuador\b",
+    r"\bprevenci[oó]n de arranque inesperado\b",
+    r"\bcircuitos neum[aá]ticos\b",
+    r"\biso\s*13849\b",
+    r"\bdescripci[oó]n del circuito\b",
+    r"\bevaluaci[oó]n de riesgos\b",
+    r"\breducci[oó]n de riesgos\b",
+    r"\bniveles? de prestaciones\b",
+    r"\bcategor[ií]a\s*[134]?\b",
 ]
 
-SHORT_TECHNICAL_TERMS = {"air", "api", "gas", "oil", "pdf", "sql"}
+SHORT_TECHNICAL_TERMS = {"air", "api", "gas", "iso", "oil", "pdf", "sql"}
 
 SPANISH_HINTS = {
     "el",
@@ -340,16 +434,25 @@ def is_low_value_text(text: str) -> bool:
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
     if len(words) < 6:
         return True
+    if re.match(r"^(?:table of contents|contents|[ií]ndice)\b", lower):
+        return True
 
     pattern_hits = sum(1 for pattern in LOW_VALUE_PATTERNS if re.search(pattern, lower))
-    if pattern_hits >= 2:
+    preferred_hits = sum(1 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, lower))
+    if pattern_hits >= 2 and preferred_hits == 0:
+        return True
+
+    contact_hits = len(
+        re.findall(r"(?:https?://|www\.|[\w.+-]+@[\w.-]+\.\w+|\+?\d[\d\s().-]{7,}\d)", lower)
+    )
+    if contact_hits >= 2 and preferred_hits == 0:
         return True
 
     numeric_tokens = sum(1 for word in words if word.isdigit() or re.fullmatch(r"[ivxlcdm]+", word))
     if numeric_tokens / max(len(words), 1) > 0.45:
         return True
 
-    if _looks_like_toc(lower):
+    if _looks_like_toc(text.lower()):
         return True
 
     unique_alpha = {word for word in words if any(char.isalpha() for char in word)}
@@ -359,6 +462,9 @@ def is_low_value_text(text: str) -> bool:
     weak_count = sum(1 for word in words if word in WEAK_TERMS)
     informative_count = sum(1 for word in words if _is_informative_term(word))
     if weak_count >= 3 and weak_count / len(words) >= 0.45 and informative_count < 3:
+        return True
+
+    if re.search(r"\bciente\s+volumen\b|\bseguridad\s+s[oó]lo\s+est[aá]\s+permitido\b", lower):
         return True
 
     return False
@@ -380,7 +486,12 @@ def chunk_quality_score(chunk: DocumentChunk) -> float:
     score += min(len(sentences), 4) * 0.4
     score += min(technical_terms, 12) * 0.15
     score += min(headings, 3) * 0.3
-    score += sum(1.25 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, text.lower()))
+    score += sum(2.0 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, text.lower()))
+    score -= sum(1.5 for pattern in LOW_VALUE_PATTERNS if re.search(pattern, text.lower()))
+    if chunk.page_number in {1, 2} and not any(
+        re.search(pattern, text.lower()) for pattern in PREFERRED_SECTION_PATTERNS
+    ):
+        score -= 0.75
     return score
 
 
@@ -407,22 +518,49 @@ def split_sentences(text: str) -> list[str]:
 
 
 def best_sentences(text: str, query: str = "", limit: int = 2) -> list[str]:
-    sentences = [sentence for sentence in split_sentences(text) if not is_low_value_text(sentence)]
-    if not sentences:
-        sentences = split_sentences(text)
+    sentences = split_sentences(text)
     if not sentences:
         return []
 
     query_terms = informative_terms(query)
-    if not query_terms:
-        return sentences[:limit]
-
-    def score(sentence: str) -> tuple[int, int]:
-        terms = set(informative_terms(sentence))
-        return (len(query_terms & terms), len(terms))
-
-    ranked = sorted(sentences, key=score, reverse=True)
+    ranked = sorted(
+        sentences,
+        key=lambda sentence: sentence_quality_score(sentence, query_terms),
+        reverse=True,
+    )
+    useful = [sentence for sentence in ranked if sentence_quality_score(sentence, query_terms) >= 0]
+    if useful:
+        ranked = useful
     return ranked[:limit]
+
+
+def sentence_quality_score(sentence: str, query_terms: set[str] | None = None) -> float:
+    """Score a sentence for extractive answers and study content."""
+
+    compact = " ".join(sentence.split())
+    lower = compact.lower()
+    words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
+    if len(words) < 4:
+        return -3.0
+    if any(re.search(pattern, lower) for pattern in LOW_VALUE_PATTERNS):
+        return -4.0
+    if re.search(r"\bciente\b|\bwww\b|https?://|@\w+|\+?\d[\d\s().-]{7,}\d", lower):
+        return -4.0
+
+    terms = informative_terms(compact)
+    overlap = len((query_terms or set()) & terms)
+    score = overlap * 3.0 + min(len(terms), 12) * 0.2
+    if re.search(
+        r"\b(se define como|es una funci[oó]n|consiste en|tiene como funci[oó]n|"
+        r"previene|evita|reduce|descarga|bloquea|garantiza)\b",
+        lower,
+    ):
+        score += 2.0
+    if any(re.search(pattern, lower) for pattern in PREFERRED_SECTION_PATTERNS):
+        score += 1.5
+    if compact[-1:] in ".!?":
+        score += 0.25
+    return score
 
 
 def informative_terms(text: str) -> set[str]:
@@ -435,30 +573,10 @@ def informative_terms(text: str) -> set[str]:
 
 
 def best_concept(text: str) -> str:
-    heading = first_heading(text)
-    if heading:
-        return heading
+    from localdocs.concepts import extract_concepts
 
-    candidates = _concept_candidates(text)
-    if not candidates:
-        return ""
-
-    lower_text = text.lower()
-
-    def score(candidate: tuple[int, str]) -> tuple[float, int]:
-        position, phrase = candidate
-        words = re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9-]*", phrase.lower())
-        informative_count = sum(1 for word in words if _is_informative_term(word))
-        technical_count = sum(1 for word in words if word in TECHNICAL_HINTS)
-        repetitions = min(lower_text.count(phrase.lower()), 3)
-        phrase_score = informative_count * 2.0
-        phrase_score += technical_count * 1.25
-        phrase_score += repetitions * 0.5
-        phrase_score += max(0.0, 1.0 - position / max(len(text), 1))
-        phrase_score -= max(0, len(words) - 5) * 0.5
-        return phrase_score, -position
-
-    return max(candidates, key=score)[1]
+    concepts = extract_concepts(text, limit=1)
+    return concepts[0] if concepts else ""
 
 
 def first_heading(text: str) -> str:
@@ -485,6 +603,11 @@ def is_weak_concept(value: str) -> bool:
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
     if not words:
         return True
+    if re.fullmatch(
+        r"(?:iso\s*\d+(?:-\d+)?|categor[ií]a\s*[134]|v[aá]lvula\s*\d+[a-z]\d+)",
+        lower,
+    ):
+        return False
     if any(word in WEAK_TERMS and word not in CONCEPT_CONNECTORS for word in words):
         return True
     if all(word in WEAK_TERMS or re.fullmatch(r"[ivxlcdm]+|\d+", word) for word in words):
@@ -580,47 +703,3 @@ def _is_informative_term(term: str) -> bool:
     if re.fullmatch(r"\d+|[ivxlcdm]+", lower):
         return False
     return True
-
-
-def _concept_candidates(text: str) -> list[tuple[int, str]]:
-    candidates: list[tuple[int, str]] = []
-    seen: set[str] = set()
-
-    for section_match in re.finditer(r"[^.!?;\n]+", text):
-        tokens = re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9-]*", section_match.group())
-        current: list[str] = []
-
-        def flush() -> None:
-            while current and current[-1].lower() in CONCEPT_CONNECTORS:
-                current.pop()
-            phrase = " ".join(current)
-            key = phrase.lower()
-            if phrase and key not in seen and not is_weak_concept(phrase):
-                seen.add(key)
-                candidates.append((section_match.start(), phrase))
-            current.clear()
-
-        for token in tokens:
-            lower = token.lower()
-            is_boundary = (
-                lower in CONCEPT_BOUNDARIES
-                or (lower in WEAK_TERMS and lower not in CONCEPT_CONNECTORS)
-                or lower.endswith("mente")
-                or lower.endswith("ly")
-            )
-            if is_boundary:
-                flush()
-                continue
-            if lower in CONCEPT_CONNECTORS:
-                if current:
-                    current.append(token)
-                continue
-            if _is_informative_term(lower):
-                current.append(token)
-                if len(current) >= 7:
-                    flush()
-                continue
-            flush()
-        flush()
-
-    return candidates

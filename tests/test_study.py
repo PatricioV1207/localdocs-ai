@@ -82,7 +82,7 @@ def test_generate_study_questions_uses_spanish_templates():
 
     questions = generate_study_questions(chunks, max_questions=3)
 
-    assert questions[0].question.startswith("¿Qué medidas se recomiendan para Seguridad neumática?")
+    assert questions[0].question.startswith("¿Qué medidas se recomiendan para la seguridad neumática?")
     assert questions[0].citation.label() == "manual_es.md, chunk 1"
 
 
@@ -103,6 +103,34 @@ def test_generate_study_questions_rejects_weak_spanish_single_words():
             chunk_index=2,
         ),
         DocumentChunk(
+            text="Circuitos mostrados presentan aplicaciones de muestra.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=4,
+        ),
+        DocumentChunk(
+            text="Observar todo ello durante la implementación.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=5,
+        ),
+        DocumentChunk(
+            text="Seguridad sólo está permitido.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=6,
+        ),
+        DocumentChunk(
+            text="ciente volumen de aire disponible antes.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=7,
+        ),
+        DocumentChunk(
             text="La seguridad en sistemas neumáticos evita movimientos inesperados del actuador.",
             file_name="manual_es.pdf",
             file_path="manual_es.pdf",
@@ -118,6 +146,10 @@ def test_generate_study_questions_rejects_weak_spanish_single_words():
     assert "¿Qué es Weber?" not in question_texts
     assert "¿Qué es únicamente?" not in question_texts
     assert "¿Cuál es la función de didáctico?" not in question_texts
+    assert "¿Cuál es la función de circuitos mostrados presentan aplicaciones de muestra?" not in question_texts
+    assert "¿Qué es observar todo ello durante la implementación?" not in question_texts
+    assert "¿Cuál es la función de seguridad sólo está permitido?" not in question_texts
+    assert "¿Qué es ciente volumen de aire disponible antes?" not in question_texts
     assert len(questions) == 1
     assert "seguridad en sistemas neumáticos" in questions[0].question
 

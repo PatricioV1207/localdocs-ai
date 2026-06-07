@@ -8,7 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from localdocs.chunker import chunk_blocks
-from localdocs.cleaning import invalid_question_message, is_valid_question
+from localdocs.cleaning import appears_spanish, invalid_question_message, is_valid_question
 from localdocs.config import DEFAULT_CONFIG_PATH, load_config
 from localdocs.export import export_qa_history, export_summaries
 from localdocs.flashcards import export_anki_tsv, generate_flashcards
@@ -144,7 +144,7 @@ def main() -> None:
             )
             st.session_state.qa_history.append(answer)
             st.session_state.last_answer = answer
-            st.session_state.last_results = results
+            st.session_state.last_results = answer.context
 
     _show_latest_answer()
 
@@ -291,7 +291,11 @@ def _show_latest_answer() -> None:
 
     st.subheader("Answer")
     st.markdown(answer.answer)
-    st.caption("Answer mode: OpenAI" if answer.used_llm else "Answer mode: local extractive")
+    st.caption(
+        "Answer mode: OpenAI"
+        if answer.used_llm
+        else "Answer mode: local extractive (heuristic sentence selection)"
+    )
     if getattr(answer, "note", ""):
         st.caption(answer.note)
 
@@ -329,6 +333,7 @@ def _show_summaries() -> None:
 
 def _show_study_tools(config) -> None:
     st.subheader("Study Tools")
+    st.caption("Questions and flashcards are generated locally from extracted document concepts.")
 
     if not st.session_state.chunks:
         st.info("Process documents before generating flashcards or study questions.")
@@ -398,8 +403,12 @@ def _show_flashcards() -> None:
 
     with st.expander("Flashcards preview", expanded=True):
         for card in st.session_state.flashcards:
-            st.markdown(f"**Q:** {card.question}")
-            st.markdown(f"**A:** {card.answer}")
+            if appears_spanish(card.question):
+                st.markdown(f"**Pregunta:** {card.question}")
+                st.markdown(f"**Respuesta:** {card.answer}")
+            else:
+                st.markdown(f"**Q:** {card.question}")
+                st.markdown(f"**A:** {card.answer}")
             st.caption(f"Source: {card.citation.label()}")
 
 

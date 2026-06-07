@@ -7,7 +7,7 @@
 
 LocalDocs AI is an open-source, local-first document intelligence app. It turns PDFs, DOCX files, text notes, and Markdown files into a private searchable knowledge base with cited answers, summaries, study questions, flashcards, and Markdown exports.
 
-Status: v0.3.2 implemented.
+Status: v0.3.3 implemented.
 
 ## Why LocalDocs AI?
 
@@ -21,9 +21,9 @@ The app works without an OpenAI API key. OpenAI generation is disabled by defaul
 - Chunk documents with `word`, `paragraph`, or Markdown `heading` strategies.
 - Search locally with scikit-learn TF-IDF.
 - Ask questions and get cited answers.
-- Fall back to extractive answers without an API key.
+- Fall back to concise heuristic extractive answers without an API key.
 - Generate basic summaries.
-- Generate study questions and flashcards with source references.
+- Generate concept-based study questions and same-language flashcards with source references.
 - Export summaries and Q&A history to Markdown.
 - Export an Obsidian-friendly Markdown vault.
 - Export Anki-compatible flashcards as TSV.
@@ -31,7 +31,7 @@ The app works without an OpenAI API key. OpenAI generation is disabled by defaul
 
 ## Not Included
 
-LocalDocs AI v0.3.2 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
+LocalDocs AI v0.3.3 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
 
 ## Supported Formats
 
@@ -40,7 +40,7 @@ LocalDocs AI v0.3.2 intentionally does not include user accounts, authentication
 - TXT files
 - Markdown files (`.md` and `.markdown`)
 
-PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.2.
+PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.3.
 
 ## Quick Start
 
@@ -220,6 +220,8 @@ localdocs-ai/
 ├── localdocs/
 │   ├── parser.py
 │   ├── chunker.py
+│   ├── cleaning.py
+│   ├── concepts.py
 │   ├── indexer.py
 │   ├── search.py
 │   ├── qa.py
@@ -250,8 +252,9 @@ v0.4 is planned to focus on research comparison mode, richer study workflows, an
 - PDF parsing depends on extractable text.
 - DOCX parsing reads normal paragraphs only; legacy `.doc` files are not supported.
 - Search is keyword-oriented TF-IDF, not semantic search.
-- Cleaning and quality filtering are heuristic and may still miss some document noise.
-- Flashcards and study questions use heuristic multi-word concept extraction and may still miss specialized terminology.
+- Local answers select and join source sentences heuristically; they are not full abstractive summaries.
+- Cleaning and concept extraction are heuristic and may still miss specialized terminology or unusual layouts.
+- Spanish and English are the best-supported study-content languages; mixed-language documents can be inconsistent.
 - Obsidian export is a Markdown folder export only.
 - Anki export is TSV only.
 - Streamlit session state is temporary.

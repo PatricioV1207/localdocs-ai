@@ -27,6 +27,14 @@
 - Improved chunking strategies
 - Study Tools UI section
 
+## v0.3.3 - Completed
+
+- Concept-based study questions
+- Same-language Spanish flashcards
+- More coherent local extractive QA for multi-concept questions
+- Stronger technical-section ranking and noise rejection
+- Golden Spanish pneumatic-safety regression coverage
+
 ## v0.4 - Planned
 
 v0.4 should deepen existing study and research workflows without changing the local-first foundation.

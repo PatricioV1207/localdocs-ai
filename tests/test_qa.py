@@ -22,7 +22,7 @@ def test_extractive_qa_returns_citations_without_openai(monkeypatch):
 
     assert answer.enough_evidence is True
     assert answer.used_llm is False
-    assert "Based on the strongest retrieved evidence" in answer.answer
+    assert "According to the strongest document evidence" in answer.answer
     assert "TF-IDF search" in answer.answer
     assert len(answer.citations) == 1
     assert answer.citations[0].label() == "guide.md, chunk 2"

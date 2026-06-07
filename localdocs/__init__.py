@@ -2,6 +2,7 @@
 
 from localdocs.chunker import chunk_blocks
 from localdocs.config import LocalDocsConfig, load_config
+from localdocs.concepts import extract_concepts
 from localdocs.flashcards import export_anki_tsv, generate_flashcards
 from localdocs.indexer import LocalIndex, build_index
 from localdocs.obsidian import export_obsidian_vault
@@ -20,6 +21,7 @@ __all__ = [
     "export_anki_tsv",
     "export_obsidian_vault",
     "export_study_questions_markdown",
+    "extract_concepts",
     "generate_flashcards",
     "generate_study_questions",
     "load_config",

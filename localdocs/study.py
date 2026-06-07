@@ -6,12 +6,15 @@ from pathlib import Path
 
 from localdocs.cleaning import (
     appears_spanish,
-    best_concept,
-    first_heading,
     informative_chunks,
     is_low_value_text,
-    is_weak_concept,
-    split_sentences,
+)
+from localdocs.concepts import (
+    concept_key,
+    concept_sentence,
+    extract_concepts,
+    related_concept,
+    spanish_concept_phrase,
 )
 from localdocs.models import Citation, DocumentChunk, StudyQuestion
 
@@ -20,24 +23,30 @@ def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 2
     """Generate simple local study questions from chunks."""
 
     questions: list[StudyQuestion] = []
-    seen: set[str] = set()
+    seen_concepts: set[str] = set()
+    ranked_chunks = informative_chunks(chunks)
+    has_useful_chunks = any(not is_low_value_text(chunk.text) for chunk in ranked_chunks)
 
-    for chunk in informative_chunks(chunks):
+    for chunk in ranked_chunks:
         if len(questions) >= max_questions:
             break
-        if is_low_value_text(chunk.text):
+        if has_useful_chunks and is_low_value_text(chunk.text):
             continue
 
-        question_text = _question_from_chunk(chunk)
+        concepts = extract_concepts(chunk.text, limit=1)
+        if not concepts:
+            continue
+        concept = concepts[0]
+        concept_id = concept_key(concept)
+        if concept_id in seen_concepts:
+            continue
+
+        question_text = _question_from_chunk(chunk, concept)
         if not question_text:
             continue
 
         citation = Citation.from_chunk(chunk)
-        key = question_text.lower()
-        if key in seen:
-            continue
-
-        seen.add(key)
+        seen_concepts.add(concept_id)
         questions.append(StudyQuestion(question=question_text, citation=citation))
 
     return questions
@@ -69,12 +78,8 @@ def export_study_questions_markdown(
     return export_path
 
 
-def _question_from_chunk(chunk: DocumentChunk) -> str:
-    concept = first_heading(chunk.text) or best_concept(chunk.text)
-    if not concept or is_weak_concept(concept):
-        return ""
-
-    concept_context = _context_for_concept(chunk.text, concept)
+def _question_from_chunk(chunk: DocumentChunk, concept: str) -> str:
+    concept_context = concept_sentence(chunk.text, concept) or chunk.text
     if appears_spanish(chunk.text):
         return _spanish_question(concept, concept_context)
 
@@ -89,13 +94,27 @@ def _question_from_chunk(chunk: DocumentChunk) -> str:
 
 def _spanish_question(concept: str, text: str) -> str:
     lower = text.lower()
+    label = spanish_concept_phrase(concept)
+    concept_lower = concept.lower()
+
+    if "se define como" in lower or "es una función" in lower or "consiste en" in lower:
+        return f"¿Qué es {label}?"
+    if concept_lower.startswith("válvula "):
+        related = related_concept(text, concept)
+        if related:
+            return f"¿Cuál es la función de {label} en {spanish_concept_phrase(related)}?"
+        return f"¿Cuál es la función de {label}?"
     if "recom" in lower or "medida" in lower:
-        return f"¿Qué medidas se recomiendan para {concept}?"
-    if "función" in lower or "funcion" in lower:
-        return f"¿Cuál es la función de {concept}?"
-    if "importante" in lower or "importancia" in lower:
-        return f"¿Por qué es importante {concept}?"
-    return f"¿Qué es {concept}?"
+        return f"¿Qué medidas se recomiendan para {label}?"
+    if any(term in lower for term in ["condición", "condiciones", "debe cumplirse", "deben cumplirse"]):
+        return f"¿Qué condiciones deben cumplirse para {label}?"
+    if any(term in lower for term in ["reduce el riesgo", "reducir el riesgo", "evita el riesgo", "previene el riesgo"]):
+        return f"¿Qué riesgo ayuda a reducir {label}?"
+    if "función" in lower or "funcion" in lower or _is_function_concept(concept_lower):
+        return f"¿Cuál es la función de {label}?"
+    if "importante" in lower or "importancia" in lower or concept_lower.startswith(("iso ", "evaluación", "reducción")):
+        return f"¿Por qué es importante {label}?"
+    return f"¿Qué es {label}?"
 
 
 def _looks_like_process(text: str) -> bool:
@@ -113,9 +132,5 @@ def _looks_like_recommendation(text: str) -> bool:
     return any(term in lower for term in ["recommend", "measure", "should", "best practice"])
 
 
-def _context_for_concept(text: str, concept: str) -> str:
-    lower_concept = concept.lower()
-    for sentence in split_sentences(text):
-        if lower_concept in sentence.lower():
-            return sentence
-    return text
+def _is_function_concept(concept: str) -> bool:
+    return concept.startswith(("relé", "sensor", "circuito", "unidad de relés", "válvula"))

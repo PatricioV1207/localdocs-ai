@@ -16,6 +16,21 @@
 - Roadmap clarity for v0.4 plans.
 - Ignore rules for local caches, build artifacts, secrets, and generated exports.
 
+## v0.3.3
+
+### Fixed
+
+- Replaced fragment-based study prompts with shared technical concept extraction.
+- Generated Spanish flashcard prompts for Spanish source documents and kept answers tied to supporting sentences.
+- Reworked local extractive QA to select complete concept-relevant sentences and cite only the evidence used.
+- Prevented legal, commercial, contact, table-of-contents, and broken-OCR chunks from outranking useful technical sections.
+
+### Improved
+
+- Added Spanish pneumatic-safety concept coverage, including safety functions, ISO terms, risk concepts, and valve identifiers.
+- Added a deterministic six-chunk Spanish regression fixture shared by study, flashcard, and QA tests.
+- Clarified heuristic local mode and concept-based study generation in the Streamlit UI.
+
 ## v0.3.2
 
 ### Fixed
