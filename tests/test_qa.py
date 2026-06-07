@@ -1,5 +1,8 @@
+import sys
+from types import SimpleNamespace
+
 from localdocs.models import DocumentChunk, SearchResult
-from localdocs.qa import WEAK_EVIDENCE_MESSAGE, answer_question
+from localdocs.qa import OPENAI_FALLBACK_NOTE, WEAK_EVIDENCE_MESSAGE, answer_question
 
 
 def test_extractive_qa_returns_citations_without_openai(monkeypatch):
@@ -74,3 +77,54 @@ def test_pdf_citation_label_includes_page_number():
     result = SearchResult(chunk=chunk, score=0.7)
 
     assert result.source_label() == "manual.pdf, page 3, chunk 5"
+
+
+def test_openai_error_uses_friendly_extractive_fallback(monkeypatch):
+    class FailingCompletions:
+        def create(self, **_kwargs):
+            raise RuntimeError("insufficient_quota: raw billing payload")
+
+    class FakeOpenAI:
+        def __init__(self, **_kwargs):
+            self.chat = SimpleNamespace(completions=FailingCompletions())
+
+    monkeypatch.setitem(sys.modules, "openai", SimpleNamespace(OpenAI=FakeOpenAI))
+    chunk = DocumentChunk(
+        text="Pressure sensors detect unsafe pneumatic system conditions before actuator movement.",
+        file_name="safety.md",
+        file_path="safety.md",
+        file_type="markdown",
+        chunk_index=1,
+    )
+
+    answer = answer_question(
+        "How do pressure sensors improve pneumatic safety?",
+        [SearchResult(chunk=chunk, score=0.9)],
+        openai_api_key="test-key",
+    )
+
+    assert answer.used_llm is False
+    assert answer.note == OPENAI_FALLBACK_NOTE
+    assert "insufficient_quota" not in answer.note
+    assert "Pressure sensors" in answer.answer
+    assert answer.citations[0].label() == "safety.md, chunk 1"
+
+
+def test_openai_can_be_disabled_even_when_environment_key_exists(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "must-not-be-used")
+    chunk = DocumentChunk(
+        text="Pressure sensors detect unsafe pneumatic system conditions before actuator movement.",
+        file_name="safety.md",
+        file_path="safety.md",
+        file_type="markdown",
+        chunk_index=1,
+    )
+
+    answer = answer_question(
+        "How do pressure sensors improve pneumatic safety?",
+        [SearchResult(chunk=chunk, score=0.9)],
+        use_openai=False,
+    )
+
+    assert answer.used_llm is False
+    assert answer.note == ""

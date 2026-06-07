@@ -11,6 +11,7 @@ from localdocs.cleaning import (
     informative_chunks,
     is_low_value_text,
     is_weak_concept,
+    split_sentences,
 )
 from localdocs.models import Citation, DocumentChunk, StudyQuestion
 
@@ -73,16 +74,17 @@ def _question_from_chunk(chunk: DocumentChunk) -> str:
     if not concept or is_weak_concept(concept):
         return ""
 
+    concept_context = _context_for_concept(chunk.text, concept)
     if appears_spanish(chunk.text):
-        return _spanish_question(concept, chunk.text)
+        return _spanish_question(concept, concept_context)
 
-    if _looks_like_process(chunk.text):
+    if _looks_like_process(concept_context):
         return f"Why is {concept} important?"
-    if _looks_like_function(chunk.text):
+    if _looks_like_function(concept_context):
         return f"What is the function of {concept}?"
-    if _looks_like_recommendation(chunk.text):
+    if _looks_like_recommendation(concept_context):
         return f"What measures are recommended for {concept}?"
-    return f"What is {concept}?"
+    return f'What is meant by "{concept}"?'
 
 
 def _spanish_question(concept: str, text: str) -> str:
@@ -109,3 +111,11 @@ def _looks_like_function(text: str) -> bool:
 def _looks_like_recommendation(text: str) -> bool:
     lower = text.lower()
     return any(term in lower for term in ["recommend", "measure", "should", "best practice"])
+
+
+def _context_for_concept(text: str, concept: str) -> str:
+    lower_concept = concept.lower()
+    for sentence in split_sentences(text):
+        if lower_concept in sentence.lower():
+            return sentence
+    return text

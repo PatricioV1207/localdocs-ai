@@ -31,7 +31,7 @@ class ExportsConfig:
 
 @dataclass(frozen=True)
 class LLMConfig:
-    use_openai_if_available: bool = True
+    use_openai_if_available: bool = False
 
 
 @dataclass(frozen=True)
@@ -95,7 +95,7 @@ def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> LocalDocsConfig:
     top_k = _positive_int(search_section, "top_k", 4, warnings)
     minimum_score = _score(search_section, "minimum_score", 0.05, warnings)
     export_dir = _string(exports_section, "export_dir", "exports", warnings)
-    use_openai = _bool(llm_section, "use_openai_if_available", True, warnings)
+    use_openai = _bool(llm_section, "use_openai_if_available", False, warnings)
     max_flashcards = _positive_int(study_section, "max_flashcards", 20, warnings)
     max_questions = _positive_int(study_section, "max_questions", 20, warnings)
     vault_dir = _string(obsidian_section, "vault_dir", "exports/obsidian_vault", warnings)

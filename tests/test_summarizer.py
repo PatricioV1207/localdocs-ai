@@ -1,5 +1,8 @@
+import sys
+from types import SimpleNamespace
+
 from localdocs.models import DocumentChunk
-from localdocs.summarizer import summarize_documents
+from localdocs.summarizer import OPENAI_FALLBACK_NOTE, summarize_documents
 
 
 def test_summarize_documents_returns_source_name_and_citations(monkeypatch):
@@ -56,3 +59,63 @@ def test_summarize_documents_avoids_copyright_front_matter(monkeypatch):
     assert "Pneumatic actuators" in summaries[0].summary
     assert "Copyright" not in summaries[0].summary
     assert [citation.label() for citation in summaries[0].citations] == ["manual.pdf, chunk 2"]
+
+
+def test_spanish_summary_prefers_technical_sections(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    chunks = [
+        DocumentChunk(
+            text="Manual didáctico Festo Weber. Autores, contenido, referencia y soluciones.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="# Objetivos\nEl ejercicio identifica los componentes principales de un circuito neumático seguro.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+        DocumentChunk(
+            text="# Seguridad\nLa parada de emergencia evita movimientos inesperados de la plataforma elevadora.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=3,
+        ),
+    ]
+
+    summary = summarize_documents(chunks)[0]
+
+    assert summary.summary.startswith("Resumen de manual_es.pdf:")
+    assert "parada de emergencia" in summary.summary
+    assert "Festo" not in summary.summary
+    assert {citation.chunk_index for citation in summary.citations} == {2, 3}
+
+
+def test_summary_openai_error_hides_raw_payload(monkeypatch):
+    class FailingCompletions:
+        def create(self, **_kwargs):
+            raise RuntimeError("authentication_error: raw API payload")
+
+    class FakeOpenAI:
+        def __init__(self, **_kwargs):
+            self.chat = SimpleNamespace(completions=FailingCompletions())
+
+    monkeypatch.setitem(sys.modules, "openai", SimpleNamespace(OpenAI=FakeOpenAI))
+    chunk = DocumentChunk(
+        text="Pneumatic safety controls stop actuator motion when pressure becomes unsafe.",
+        file_name="safety.md",
+        file_path="safety.md",
+        file_type="markdown",
+        chunk_index=1,
+    )
+
+    summary = summarize_documents([chunk], openai_api_key="test-key")[0]
+
+    assert summary.used_llm is False
+    assert summary.note == OPENAI_FALLBACK_NOTE
+    assert "authentication_error" not in summary.note
+    assert summary.citations[0].label() == "safety.md, chunk 1"

@@ -7,13 +7,13 @@
 
 LocalDocs AI is an open-source, local-first document intelligence app. It turns PDFs, DOCX files, text notes, and Markdown files into a private searchable knowledge base with cited answers, summaries, study questions, flashcards, and Markdown exports.
 
-Status: v0.3.1 implemented.
+Status: v0.3.2 implemented.
 
 ## Why LocalDocs AI?
 
 Many people have useful knowledge scattered across PDFs, notes, manuals, and guides. LocalDocs AI helps make those documents searchable and reusable while keeping the default workflow on your machine.
 
-The app works without an OpenAI API key. If `OPENAI_API_KEY` is configured, LocalDocs can optionally generate more natural answers and summaries, but answers are still based on retrieved document context.
+The app works without an OpenAI API key. OpenAI generation is disabled by default. If `OPENAI_API_KEY` is configured and the sidebar option is enabled, LocalDocs can optionally generate more natural answers and summaries, but answers are still based on retrieved document context.
 
 ## Features
 
@@ -31,7 +31,7 @@ The app works without an OpenAI API key. If `OPENAI_API_KEY` is configured, Loca
 
 ## Not Included
 
-LocalDocs AI v0.3 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
+LocalDocs AI v0.3.2 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
 
 ## Supported Formats
 
@@ -40,7 +40,7 @@ LocalDocs AI v0.3 intentionally does not include user accounts, authentication, 
 - TXT files
 - Markdown files (`.md` and `.markdown`)
 
-PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.
+PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.2.
 
 ## Quick Start
 
@@ -102,7 +102,7 @@ minimum_score = 0.05
 export_dir = "exports"
 
 [llm]
-use_openai_if_available = true
+use_openai_if_available = false
 
 [study]
 max_flashcards = 20
@@ -179,6 +179,8 @@ OPENAI_API_KEY=your_api_key_here
 
 Do not commit `.env` files or API keys.
 
+OpenAI API billing is separate from a ChatGPT subscription. Having ChatGPT access does not automatically provide API credits. If the API key is unavailable, invalid, rate-limited, or out of quota, LocalDocs shows a short friendly notice and continues with local extractive mode without exposing the raw API error.
+
 ## Development
 
 Install dependencies:
@@ -190,16 +192,18 @@ pip install -r requirements.txt
 Run tests:
 
 ```bash
-pytest
-```
-
-If `pytest` is not on your shell path:
-
-```bash
 python -m pytest
 ```
 
-GitHub Actions runs the test suite on push and pull requests.
+Running pytest as a Python module also ensures the repository package is importable consistently in local environments and GitHub Actions.
+
+The equivalent direct command remains available when your shell is configured for it:
+
+```bash
+pytest
+```
+
+GitHub Actions runs `python -m pytest` on Python 3.11 and 3.12 for pushes and pull requests. It does not require `OPENAI_API_KEY`.
 
 ## Project Structure
 
@@ -247,7 +251,7 @@ v0.4 is planned to focus on research comparison mode, richer study workflows, an
 - DOCX parsing reads normal paragraphs only; legacy `.doc` files are not supported.
 - Search is keyword-oriented TF-IDF, not semantic search.
 - Cleaning and quality filtering are heuristic and may still miss some document noise.
-- Flashcards and study questions are simple extractive outputs.
+- Flashcards and study questions use heuristic multi-word concept extraction and may still miss specialized terminology.
 - Obsidian export is a Markdown folder export only.
 - Anki export is TSV only.
 - Streamlit session state is temporary.

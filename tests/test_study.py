@@ -16,13 +16,13 @@ def test_generate_study_questions_includes_sources():
     questions = generate_study_questions(chunks, max_questions=3)
 
     assert len(questions) == 1
-    assert questions[0].question == "What is Chunking Strategies?"
+    assert questions[0].question == 'What is meant by "Chunking Strategies"?'
     assert questions[0].citation.label() == "guide.md, chunk 1"
 
 
 def test_export_study_questions_markdown(tmp_path):
     chunk = DocumentChunk(
-        text="LocalDocs AI creates review questions from chunks.",
+        text="Pressure sensors detect unsafe pneumatic system conditions before actuator movement.",
         file_name="note.txt",
         file_path="note.txt",
         file_type="txt",
@@ -84,3 +84,98 @@ def test_generate_study_questions_uses_spanish_templates():
 
     assert questions[0].question.startswith("¿Qué medidas se recomiendan para Seguridad neumática?")
     assert questions[0].citation.label() == "manual_es.md, chunk 1"
+
+
+def test_generate_study_questions_rejects_weak_spanish_single_words():
+    chunks = [
+        DocumentChunk(
+            text="Para únicamente el estudiante consulta el manual didáctico de Festo.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="Weber autores contenido página referencia soluciones.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+        DocumentChunk(
+            text="La seguridad en sistemas neumáticos evita movimientos inesperados del actuador.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=3,
+        ),
+    ]
+
+    questions = generate_study_questions(chunks, max_questions=10)
+    question_texts = {question.question for question in questions}
+
+    assert "¿Qué es para?" not in question_texts
+    assert "¿Qué es Weber?" not in question_texts
+    assert "¿Qué es únicamente?" not in question_texts
+    assert "¿Cuál es la función de didáctico?" not in question_texts
+    assert len(questions) == 1
+    assert "seguridad en sistemas neumáticos" in questions[0].question
+
+
+def test_generate_study_questions_prefers_multiword_technical_concepts():
+    chunks = [
+        DocumentChunk(
+            text="La parada de emergencia detiene inmediatamente la plataforma elevadora.",
+            file_name="seguridad.pdf",
+            file_path="seguridad.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="La unidad de relés de seguridad supervisa circuitos eléctricos de seguridad.",
+            file_name="seguridad.pdf",
+            file_path="seguridad.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+    ]
+
+    questions = generate_study_questions(chunks, max_questions=5)
+
+    assert len(questions) == 2
+    assert any("parada de emergencia" in question.question for question in questions)
+    assert any("unidad de relés de seguridad" in question.question for question in questions)
+    assert all(question.citation.file_name == "seguridad.pdf" for question in questions)
+
+
+def test_generate_study_questions_avoids_verbs_and_unrelated_template_cues():
+    chunks = [
+        DocumentChunk(
+            text=(
+                "LocalDocs AI turns folders of notes, PDFs, and Markdown files into a private searchable "
+                "knowledge base. Every answer should cite source evidence."
+            ),
+            file_name="guide.md",
+            file_path="guide.md",
+            file_type="markdown",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text=(
+                "The app uses simple TF-IDF search so retrieval remains local. "
+                "Every answer should cite the source document."
+            ),
+            file_name="note.txt",
+            file_path="note.txt",
+            file_type="txt",
+            chunk_index=1,
+        ),
+    ]
+
+    questions = generate_study_questions(chunks, max_questions=5)
+    question_texts = [question.question for question in questions]
+
+    assert any("knowledge base" in question for question in question_texts)
+    assert 'What is meant by "simple TF-IDF search"?' in question_texts
+    assert all("What is turns" not in question for question in question_texts)
+    assert all("recommended for simple TF-IDF search" not in question for question in question_texts)

@@ -1,6 +1,12 @@
-from localdocs.cleaning import clean_text, is_low_value_text, is_valid_question, repeated_line_keys
+from localdocs.cleaning import (
+    best_concept,
+    clean_text,
+    informative_chunks,
+    is_low_value_text,
+    is_valid_question,
+    repeated_line_keys,
+)
 from localdocs.models import DocumentChunk
-from localdocs.cleaning import informative_chunks
 
 
 def test_clean_text_removes_repeated_headers_page_numbers_and_copyright():
@@ -49,6 +55,8 @@ def test_low_value_chunk_detection_and_informative_fallback():
 def test_question_validation_rejects_placeholders_and_short_text():
     assert is_valid_question("") is False
     assert is_valid_question("Your question") is False
+    assert is_valid_question("Your question here") is False
+    assert is_valid_question("¿Qué es para?") is False
     assert is_valid_question("why") is False
     assert is_valid_question("How does pneumatic pressure regulation work?") is True
 
@@ -64,3 +72,17 @@ def test_repeated_line_keys_remove_pdf_like_headers_across_pages():
 
     assert "FESTO MANUAL" not in cleaned
     assert "Pressure valves regulate compressed air." in cleaned
+
+
+def test_best_concept_prefers_multiword_technical_phrases():
+    assert best_concept("La seguridad en sistemas neumáticos evita movimientos inesperados.") == (
+        "seguridad en sistemas neumáticos"
+    )
+    assert best_concept("La parada de emergencia detiene la plataforma elevadora.") == "parada de emergencia"
+    assert best_concept("La unidad de relés de seguridad supervisa el circuito.") == (
+        "unidad de relés de seguridad"
+    )
+
+
+def test_best_concept_rejects_weak_spanish_metadata():
+    assert best_concept("Para únicamente el estudiante consulta el manual didáctico de Festo Weber.") == ""

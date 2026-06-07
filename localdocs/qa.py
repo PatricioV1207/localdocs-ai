@@ -9,6 +9,7 @@ from localdocs.models import Answer, Citation, SearchResult
 
 MIN_EVIDENCE_SCORE = 0.05
 WEAK_EVIDENCE_MESSAGE = "I could not find enough strong evidence in the documents."
+OPENAI_FALLBACK_NOTE = "OpenAI generation is unavailable, so LocalDocs used local extractive mode."
 
 
 def answer_question(
@@ -17,6 +18,7 @@ def answer_question(
     openai_api_key: str | None = None,
     model: str = "gpt-4o-mini",
     min_score: float = MIN_EVIDENCE_SCORE,
+    use_openai: bool = True,
 ) -> Answer:
     """Answer a question using only retrieved document context."""
 
@@ -43,7 +45,7 @@ def answer_question(
 
     selected_results = _select_results(strong_results)
     citations = _unique_citations(selected_results)
-    api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+    api_key = (openai_api_key or os.getenv("OPENAI_API_KEY")) if use_openai else None
 
     if api_key:
         llm_answer, llm_error = _try_openai_answer(question, selected_results, api_key, model)
@@ -100,8 +102,8 @@ def _try_openai_answer(
         )
         answer = response.choices[0].message.content or ""
         return answer.strip() or None, ""
-    except Exception as exc:
-        return None, f"OpenAI answer generation failed, so LocalDocs used extractive fallback: {exc}"
+    except Exception:
+        return None, OPENAI_FALLBACK_NOTE
 
 
 def _extractive_answer(question: str, results: list[SearchResult]) -> str:

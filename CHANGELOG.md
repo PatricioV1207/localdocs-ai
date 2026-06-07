@@ -16,6 +16,24 @@
 - Roadmap clarity for v0.4 plans.
 - Ignore rules for local caches, build artifacts, secrets, and generated exports.
 
+## v0.3.2
+
+### Fixed
+
+- Cleared stale visible answers and relevant chunks when an invalid or placeholder-like question is submitted.
+- Replaced weak single-word study concepts with multi-word technical phrase extraction, including stronger Spanish stopword and metadata filtering.
+- Rejected generic flashcard concepts and deduplicated cards by question.
+- Improved extractive summaries so technical, objective, component, exercise, and safety sections outrank front matter.
+- Hid raw OpenAI authentication, quota, billing, and rate-limit payloads behind a friendly local-fallback message.
+- Fixed GitHub Actions test collection on Python 3.11 and 3.12 by running `python -m pytest`.
+
+### Improved
+
+- Made optional OpenAI generation disabled by default and ensured the setting overrides an environment API key.
+- Added Spanish extractive summary labeling and source citations tied to selected summary evidence.
+- Updated GitHub Actions to Node 24-compatible `checkout` and `setup-python` releases.
+- Added regression tests for invalid question state, OpenAI fallback, Spanish technical concepts, weak-term rejection, duplicate filtering, and summary quality.
+
 ## v0.3.1
 
 ### Fixed

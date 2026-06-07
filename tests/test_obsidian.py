@@ -6,7 +6,7 @@ from localdocs.study import generate_study_questions
 
 def test_export_obsidian_vault_creates_expected_files(tmp_path):
     chunk = DocumentChunk(
-        text="LocalDocs AI can export an Obsidian-friendly vault.",
+        text="# Obsidian Vault Export\nObsidian vault export writes linked Markdown notes for local review.",
         file_name="guide.md",
         file_path="guide.md",
         file_type="markdown",

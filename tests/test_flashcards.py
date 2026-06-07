@@ -70,3 +70,37 @@ def test_generate_flashcards_filters_duplicates_and_noise():
     assert len(cards) == 1
     assert all("Copyright" not in card.answer for card in cards)
     assert cards[0].citation.label() == "manual.pdf, chunk 2"
+
+
+def test_generate_flashcards_rejects_weak_terms_and_deduplicates_concepts():
+    chunks = [
+        DocumentChunk(
+            text="Para únicamente el estudiante consulta el manual didáctico de Festo Weber.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="# Válvula antirretorno\nLa válvula antirretorno permite el flujo de aire en una sola dirección.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+        DocumentChunk(
+            text="# Válvula antirretorno\nEste componente evita el retorno de aire comprimido hacia la fuente.",
+            file_name="manual_es.pdf",
+            file_path="manual_es.pdf",
+            file_type="pdf",
+            chunk_index=3,
+        ),
+    ]
+
+    cards = generate_flashcards(chunks, max_cards=10)
+
+    assert len(cards) == 1
+    assert "Válvula antirretorno" in cards[0].question
+    assert cards[0].citation.file_name == "manual_es.pdf"
+    assert cards[0].citation.chunk_index in {2, 3}
+    assert "Festo" not in cards[0].question

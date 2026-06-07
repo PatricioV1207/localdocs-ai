@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any, MutableMapping
 
 import streamlit as st
 from dotenv import load_dotenv
 
 from localdocs.chunker import chunk_blocks
+from localdocs.cleaning import invalid_question_message, is_valid_question
 from localdocs.config import DEFAULT_CONFIG_PATH, load_config
 from localdocs.export import export_qa_history, export_summaries
 from localdocs.flashcards import export_anki_tsv, generate_flashcards
@@ -17,7 +19,6 @@ from localdocs.qa import answer_question
 from localdocs.search import search
 from localdocs.study import export_study_questions_markdown, generate_study_questions
 from localdocs.summarizer import summarize_documents
-from localdocs.cleaning import invalid_question_message, is_valid_question
 
 SAMPLE_DOCS_DIR = Path("sample_docs")
 SUPPORTED_TYPES = ["pdf", "docx", "txt", "md", "markdown"]
@@ -121,10 +122,12 @@ def main() -> None:
     question = st.text_input("Your question", placeholder="What do these documents say about local search?")
 
     if st.button("Ask", use_container_width=True):
-        if not _index_ready():
-            st.warning("Process documents with searchable text before asking a question.")
-        elif not is_valid_question(question):
+        if not is_valid_question(question):
+            _clear_answer_state(st.session_state)
             st.warning(invalid_question_message())
+        elif not _index_ready():
+            _clear_answer_state(st.session_state)
+            st.warning("Process documents with searchable text before asking a question.")
         else:
             results = search(
                 st.session_state.index,
@@ -136,9 +139,11 @@ def main() -> None:
                 question,
                 results,
                 openai_api_key=api_key,
+                use_openai=use_openai,
                 min_score=float(minimum_score),
             )
             st.session_state.qa_history.append(answer)
+            st.session_state.last_answer = answer
             st.session_state.last_results = results
 
     _show_latest_answer()
@@ -152,6 +157,7 @@ def main() -> None:
             st.session_state.summaries = summarize_documents(
                 st.session_state.chunks,
                 openai_api_key=api_key,
+                use_openai=use_openai,
             )
 
     _show_summaries()
@@ -177,6 +183,7 @@ def _init_state() -> None:
         "document_names": [],
         "index": None,
         "qa_history": [],
+        "last_answer": None,
         "summaries": [],
         "flashcards": [],
         "study_questions": [],
@@ -242,6 +249,7 @@ def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> 
     st.session_state.document_names = sorted({block.file_name for block in blocks})
     st.session_state.index = build_index(chunks)
     st.session_state.qa_history = []
+    st.session_state.last_answer = None
     st.session_state.summaries = []
     st.session_state.flashcards = []
     st.session_state.study_questions = []
@@ -277,10 +285,10 @@ def _show_index_status() -> None:
 
 
 def _show_latest_answer() -> None:
-    if not st.session_state.qa_history:
+    answer = st.session_state.last_answer
+    if answer is None:
         return
 
-    answer = st.session_state.qa_history[-1]
     st.subheader("Answer")
     st.markdown(answer.answer)
     st.caption("Answer mode: OpenAI" if answer.used_llm else "Answer mode: local extractive")
@@ -408,6 +416,13 @@ def _show_study_questions() -> None:
 def _show_errors(errors: list[str]) -> None:
     for error in errors:
         st.error(error)
+
+
+def _clear_answer_state(state: MutableMapping[str, Any]) -> None:
+    """Hide a stale answer without erasing exported Q&A history."""
+
+    state["last_answer"] = None
+    state["last_results"] = []
 
 
 def _index_ready() -> bool:

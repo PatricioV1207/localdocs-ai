@@ -1,6 +1,6 @@
-# LocalDocs AI v0.3.1 Architecture
+# LocalDocs AI v0.3.2 Architecture
 
-LocalDocs AI v0.3.1 is a small Streamlit app backed by plain Python modules. The goal is to keep the v0.3 study/export workflows while improving local answer and generation quality.
+LocalDocs AI v0.3.2 is a small Streamlit app backed by plain Python modules. The goal is to keep the v0.3 study/export workflows while improving local answer, study-content, and CI reliability.
 
 ## Parsing
 
@@ -38,7 +38,7 @@ This is simple by design. It is good enough for a local search index and easy to
 
 `localdocs/config.py` loads `localdocs_config.toml` from the project root. If the file is missing, defaults are used. If the file is invalid or contains bad values, the loader keeps the app running, falls back to defaults for those settings, and exposes warnings for the Streamlit sidebar.
 
-The config controls chunk strategy, chunk size, chunk overlap, search result count, minimum search score, export directories, study tool limits, and whether OpenAI should be used when an API key exists.
+The config controls chunk strategy, chunk size, chunk overlap, search result count, minimum search score, export directories, study tool limits, and whether OpenAI should be used when an API key exists. OpenAI use is disabled by default and can be enabled explicitly in the sidebar or config file.
 
 ## Local Search
 
@@ -60,17 +60,17 @@ Sources:
 - notes.md, chunk 2
 ```
 
-If OpenAI is configured but unavailable or errors, LocalDocs falls back to the same extractive answer path and keeps a short note for the Streamlit UI.
+If OpenAI is configured but unavailable or returns an authentication, billing, quota, or rate-limit error, LocalDocs falls back to the same extractive answer path. The UI shows a short friendly note and never exposes the raw API payload.
 
 ## Summaries and Export
 
-`localdocs/summarizer.py` creates a basic per-document summary from informative document chunks, with optional OpenAI summarization when configured. `localdocs/export.py` writes summaries to `exports/summaries.md` and Q&A history to `exports/qa_history.md`.
+`localdocs/summarizer.py` creates a basic per-document summary from informative document chunks, with optional OpenAI summarization when configured. Introduction, objective, safety, component, exercise, and technical sections receive a small quality preference over front matter. Spanish extractive summaries retain Spanish source sentences. `localdocs/export.py` writes summaries to `exports/summaries.md` and Q&A history to `exports/qa_history.md`.
 
 ## Flashcards and Study Questions
 
-`localdocs/flashcards.py` generates simple extractive flashcards from chunks. Each flashcard includes a question, answer, and citation. `export_anki_tsv()` writes Anki-compatible tab-separated rows with three fields: question, answer, and source.
+`localdocs/flashcards.py` generates simple extractive flashcards from meaningful multi-word concepts and informative sentences. Generic metadata terms are rejected, duplicate card questions are collapsed, and each flashcard includes a question, answer, and citation. `export_anki_tsv()` writes Anki-compatible tab-separated rows with three fields: question, answer, and source.
 
-`localdocs/study.py` generates simple study questions from Markdown headings or important-looking chunk text. Each question includes a source citation. Study questions can also be exported to Markdown.
+`localdocs/study.py` generates simple study questions from meaningful Markdown headings or bounded multi-word technical phrases. Expanded English and Spanish weak-term lists prevent questions based on publisher names, instructions, page metadata, or isolated generic words. Each question includes a source citation. Study questions can also be exported to Markdown.
 
 These tools are intentionally local and lightweight in v0.3. They do not build a full learning platform.
 
@@ -80,4 +80,4 @@ These tools are intentionally local and lightweight in v0.3. They do not build a
 
 ## Streamlit UI State
 
-The app does not store data in a database. Parsed chunks, the local index, processed file names, summaries, Q&A history, generated flashcards, study questions, and the most recent search results live in Streamlit session state while the app is running. Exports are Markdown or TSV files on disk in configured locations.
+The app does not store data in a database. Parsed chunks, the local index, processed file names, summaries, Q&A history, generated flashcards, study questions, the visible latest answer, and the most recent search results live in Streamlit session state while the app is running. Invalid question submissions clear the visible answer and result list without deleting prior Q&A history. Exports are Markdown or TSV files on disk in configured locations.

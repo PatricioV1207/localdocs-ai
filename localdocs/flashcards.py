@@ -12,7 +12,7 @@ def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 20) -> lis
     """Generate simple extractive flashcards from document chunks."""
 
     flashcards: list[Flashcard] = []
-    seen: set[tuple[str, str]] = set()
+    seen_questions: set[str] = set()
 
     for chunk in informative_chunks(chunks):
         if len(flashcards) >= max_cards:
@@ -25,11 +25,11 @@ def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 20) -> lis
             continue
 
         citation = Citation.from_chunk(chunk)
-        key = (question.lower(), answer.lower())
-        if key in seen:
+        key = question.lower()
+        if key in seen_questions:
             continue
 
-        seen.add(key)
+        seen_questions.add(key)
         flashcards.append(Flashcard(question=question, answer=answer, citation=citation))
 
     return flashcards
@@ -60,14 +60,10 @@ def export_anki_tsv(flashcards: list[Flashcard], path: str | Path = "exports/fla
 def _card_from_chunk(chunk: DocumentChunk) -> tuple[str, str]:
     concept = best_concept(chunk.text)
     answer = _best_answer(chunk.text)
-    if not answer:
+    if not answer or not concept or is_weak_concept(concept):
         return "", ""
 
-    if concept and not is_weak_concept(concept):
-        question = f"What is a key point about {concept}?"
-    else:
-        question = f"What is a key point from {chunk.file_name}, chunk {chunk.chunk_index}?"
-
+    question = f"What is a key point about {concept}?"
     return question, _truncate(answer, 280)
 
 

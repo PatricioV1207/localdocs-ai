@@ -24,31 +24,266 @@ LOW_VALUE_PATTERNS = [
 WEAK_TERMS = {
     "about",
     "also",
+    "author",
+    "authors",
+    "autores",
     "chapter",
+    "como",
+    "cómo",
+    "con",
     "content",
+    "contenido",
     "contents",
     "copyright",
+    "cual",
+    "cuál",
+    "cuando",
+    "cuándo",
+    "didactic",
+    "didáctico",
+    "didácticos",
     "document",
     "documents",
+    "donde",
+    "dónde",
     "edition",
+    "ejercicio",
+    "ejercicios",
+    "estudiante",
+    "estudiantes",
     "festo",
     "figure",
+    "file",
+    "files",
+    "folder",
+    "folders",
     "from",
+    "function",
+    "funcion",
+    "función",
     "guide",
+    "important",
+    "importancia",
+    "importante",
     "localdocs",
+    "note",
+    "notes",
     "page",
     "pages",
+    "manual",
+    "measure",
+    "measures",
+    "medida",
+    "medidas",
+    "pagina",
+    "página",
+    "páginas",
+    "para",
+    "por",
     "press",
     "publisher",
     "publishing",
+    "question",
+    "questions",
+    "que",
+    "qué",
+    "reference",
+    "references",
+    "referencia",
+    "referencias",
+    "review",
     "rights",
     "section",
+    "solution",
+    "solutions",
+    "soluciones",
     "source",
+    "student",
+    "students",
     "table",
     "text",
     "this",
+    "una",
+    "unicamente",
+    "únicamente",
+    "weber",
     "with",
 }
+
+CONCEPT_CONNECTORS = {
+    "and",
+    "de",
+    "del",
+    "e",
+    "en",
+    "in",
+    "la",
+    "las",
+    "los",
+    "of",
+    "y",
+}
+
+CONCEPT_BOUNDARIES = {
+    "allows",
+    "alimenta",
+    "alimentan",
+    "asegura",
+    "aseguran",
+    "can",
+    "closes",
+    "conecta",
+    "conectan",
+    "connects",
+    "control",
+    "controla",
+    "controlan",
+    "controls",
+    "convert",
+    "converts",
+    "convierte",
+    "convierten",
+    "create",
+    "created",
+    "creates",
+    "debe",
+    "deben",
+    "desconecta",
+    "desconectan",
+    "detecta",
+    "detectan",
+    "detects",
+    "detiene",
+    "detienen",
+    "ensure",
+    "ensures",
+    "evita",
+    "evitan",
+    "exporta",
+    "exportan",
+    "exports",
+    "feeds",
+    "generate",
+    "generated",
+    "generates",
+    "genera",
+    "generan",
+    "helps",
+    "include",
+    "includes",
+    "incluye",
+    "incluyen",
+    "into",
+    "mejora",
+    "mejoran",
+    "monitors",
+    "moves",
+    "must",
+    "opens",
+    "permite",
+    "permiten",
+    "prevents",
+    "protege",
+    "protegen",
+    "provides",
+    "puede",
+    "pueden",
+    "recomienda",
+    "recomiendan",
+    "reduce",
+    "reducen",
+    "regula",
+    "regulan",
+    "regulate",
+    "regulates",
+    "requires",
+    "requiere",
+    "requieren",
+    "routes",
+    "should",
+    "stabilizes",
+    "stops",
+    "supervisa",
+    "supervisan",
+    "supervises",
+    "supports",
+    "turn",
+    "turns",
+    "use",
+    "used",
+    "uses",
+    "utiliza",
+    "utilizan",
+}
+
+TECHNICAL_HINTS = {
+    "actuador",
+    "actuadores",
+    "actuator",
+    "actuators",
+    "air",
+    "aire",
+    "antirretorno",
+    "circuit",
+    "circuits",
+    "circuito",
+    "circuitos",
+    "compressed",
+    "comprimido",
+    "control",
+    "eléctrico",
+    "eléctricos",
+    "elevadora",
+    "emergencia",
+    "neumática",
+    "neumático",
+    "neumáticos",
+    "pneumatic",
+    "plataforma",
+    "parada",
+    "pressure",
+    "presión",
+    "relé",
+    "relés",
+    "retrieval",
+    "riesgo",
+    "riesgos",
+    "safety",
+    "search",
+    "seguridad",
+    "sensor",
+    "sensores",
+    "sistema",
+    "sistemas",
+    "system",
+    "systems",
+    "unidad",
+    "base",
+    "knowledge",
+    "searchable",
+    "válvula",
+    "válvulas",
+    "valve",
+    "valves",
+}
+
+PREFERRED_SECTION_PATTERNS = [
+    r"\bintroduction\b",
+    r"\boverview\b",
+    r"\bobjectives?\b",
+    r"\bsafety\b",
+    r"\bcomponents?\b",
+    r"\bexercises?\b",
+    r"\btechnical\b",
+    r"\bintroducci[oó]n\b",
+    r"\bobjetivos?\b",
+    r"\bseguridad\b",
+    r"\bcomponentes?\b",
+    r"\bejercicios?\b",
+    r"\bt[eé]cnic[oa]s?\b",
+]
+
+SHORT_TECHNICAL_TERMS = {"air", "api", "gas", "oil", "pdf", "sql"}
 
 SPANISH_HINTS = {
     "el",
@@ -121,6 +356,11 @@ def is_low_value_text(text: str) -> bool:
     if len(unique_alpha) <= 3 and len(words) > 10:
         return True
 
+    weak_count = sum(1 for word in words if word in WEAK_TERMS)
+    informative_count = sum(1 for word in words if _is_informative_term(word))
+    if weak_count >= 3 and weak_count / len(words) >= 0.45 and informative_count < 3:
+        return True
+
     return False
 
 
@@ -140,6 +380,7 @@ def chunk_quality_score(chunk: DocumentChunk) -> float:
     score += min(len(sentences), 4) * 0.4
     score += min(technical_terms, 12) * 0.15
     score += min(headings, 3) * 0.3
+    score += sum(1.25 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, text.lower()))
     return score
 
 
@@ -198,21 +439,41 @@ def best_concept(text: str) -> str:
     if heading:
         return heading
 
-    terms = [term for term in re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9-]{3,}", text) if _is_informative_term(term)]
-    if not terms:
+    candidates = _concept_candidates(text)
+    if not candidates:
         return ""
 
-    counts = Counter(term for term in terms)
-    return counts.most_common(1)[0][0]
+    lower_text = text.lower()
+
+    def score(candidate: tuple[int, str]) -> tuple[float, int]:
+        position, phrase = candidate
+        words = re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9-]*", phrase.lower())
+        informative_count = sum(1 for word in words if _is_informative_term(word))
+        technical_count = sum(1 for word in words if word in TECHNICAL_HINTS)
+        repetitions = min(lower_text.count(phrase.lower()), 3)
+        phrase_score = informative_count * 2.0
+        phrase_score += technical_count * 1.25
+        phrase_score += repetitions * 0.5
+        phrase_score += max(0.0, 1.0 - position / max(len(text), 1))
+        phrase_score -= max(0, len(words) - 5) * 0.5
+        return phrase_score, -position
+
+    return max(candidates, key=score)[1]
 
 
 def first_heading(text: str) -> str:
-    for line in text.splitlines():
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    for line in lines:
         stripped = line.strip()
         if stripped.startswith("#"):
             heading = stripped.lstrip("#").strip()
             if heading and not is_weak_concept(heading):
                 return heading
+
+    for line in lines[:8]:
+        words = re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9-]*", line)
+        if 2 <= len(words) <= 8 and not re.search(r"[.!?;:]$", line) and not is_weak_concept(line):
+            return line
     return ""
 
 
@@ -224,11 +485,12 @@ def is_weak_concept(value: str) -> bool:
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
     if not words:
         return True
-    if len(words) == 1 and (words[0] in WEAK_TERMS or len(words[0]) < 4 or re.fullmatch(r"[ivxlcdm]+|\d+", words[0])):
+    if any(word in WEAK_TERMS and word not in CONCEPT_CONNECTORS for word in words):
         return True
     if all(word in WEAK_TERMS or re.fullmatch(r"[ivxlcdm]+|\d+", word) for word in words):
         return True
-    return False
+    informative = [word for word in words if _is_informative_term(word)]
+    return len(informative) < 2
 
 
 def appears_spanish(text: str) -> bool:
@@ -241,7 +503,17 @@ def is_valid_question(question: str) -> bool:
     stripped = " ".join(question.split())
     if len(stripped) < 8:
         return False
-    if stripped.lower() in {"your question", "question", "ask a question", "what do these documents say about local search?"}:
+    normalized = stripped.lower().strip(" .?!¿¡:")
+    if normalized in {
+        "your question",
+        "your question here",
+        "question",
+        "ask a question",
+        "enter your question",
+        "tu pregunta",
+        "escribe tu pregunta",
+        "what do these documents say about local search",
+    }:
         return False
     terms = informative_terms(stripped)
     return len(terms) >= 1
@@ -303,8 +575,52 @@ def _is_informative_term(term: str) -> bool:
     lower = term.lower().strip(" .,:;!?()[]{}")
     if not lower or lower in WEAK_TERMS:
         return False
-    if len(lower) < 4:
+    if len(lower) < 4 and lower not in SHORT_TECHNICAL_TERMS:
         return False
     if re.fullmatch(r"\d+|[ivxlcdm]+", lower):
         return False
     return True
+
+
+def _concept_candidates(text: str) -> list[tuple[int, str]]:
+    candidates: list[tuple[int, str]] = []
+    seen: set[str] = set()
+
+    for section_match in re.finditer(r"[^.!?;\n]+", text):
+        tokens = re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9-]*", section_match.group())
+        current: list[str] = []
+
+        def flush() -> None:
+            while current and current[-1].lower() in CONCEPT_CONNECTORS:
+                current.pop()
+            phrase = " ".join(current)
+            key = phrase.lower()
+            if phrase and key not in seen and not is_weak_concept(phrase):
+                seen.add(key)
+                candidates.append((section_match.start(), phrase))
+            current.clear()
+
+        for token in tokens:
+            lower = token.lower()
+            is_boundary = (
+                lower in CONCEPT_BOUNDARIES
+                or (lower in WEAK_TERMS and lower not in CONCEPT_CONNECTORS)
+                or lower.endswith("mente")
+                or lower.endswith("ly")
+            )
+            if is_boundary:
+                flush()
+                continue
+            if lower in CONCEPT_CONNECTORS:
+                if current:
+                    current.append(token)
+                continue
+            if _is_informative_term(lower):
+                current.append(token)
+                if len(current) >= 7:
+                    flush()
+                continue
+            flush()
+        flush()
+
+    return candidates

@@ -11,7 +11,7 @@ minimum_score = 0.05
 export_dir = "exports"
 
 [llm]
-use_openai_if_available = true
+use_openai_if_available = false
 
 [study]
 max_flashcards = 20
