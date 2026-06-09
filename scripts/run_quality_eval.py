@@ -10,15 +10,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from localdocs.cleaning import is_low_value_text, is_quality_sentence, split_sentences
 from localdocs.concepts import is_valid_generated_question
+from localdocs.document_types import detect_document_profiles
 from localdocs.flashcards import generate_flashcards
+from localdocs.indexer import build_index
 from localdocs.models import DocumentChunk, SearchResult
 from localdocs.qa import answer_question
+from localdocs.search import search
 from localdocs.study import generate_study_questions
 from localdocs.summarizer import summarize_documents
 
@@ -59,6 +64,26 @@ class EvaluationReport:
     @property
     def failure_count(self) -> int:
         return sum(len(result.failures) for result in self.results)
+
+
+class FixtureEmbeddingProvider:
+    """Deterministic embedding provider backed by fixture vectors."""
+
+    def __init__(self, case: dict[str, Any]) -> None:
+        self.case = case
+
+    def encode_documents(self, texts: list[str]) -> np.ndarray:
+        if self.case.get("fail_document_encoding"):
+            raise RuntimeError("Fixture document encoding failure.")
+        vectors = np.asarray(self.case["document_vectors"], dtype=float)
+        if len(texts) != len(vectors):
+            raise ValueError("Fixture embedding count does not match chunks.")
+        return vectors
+
+    def encode_query(self, text: str) -> np.ndarray:
+        if self.case.get("fail_query_encoding"):
+            raise RuntimeError("Fixture query encoding failure.")
+        return np.asarray(self.case["query_vector"], dtype=float)
 
 
 def run_all(
@@ -144,6 +169,17 @@ def run_all(
         chunks = _build_chunks(fixture_path.stem, fixture["chunks"])
         chunk_by_index = {chunk.chunk_index: chunk for chunk in chunks}
 
+        document_type_result = _evaluate_document_types(
+            fixture_path.stem,
+            chunks,
+            expected.get("document_types"),
+        )
+        semantic_results = _evaluate_semantic_search(
+            fixture_path.stem,
+            chunks,
+            fixture.get("semantic_cases", []),
+            expected.get("semantic_search", []),
+        )
         qa_outputs, qa_results = _evaluate_qa(
             fixture_path.stem,
             fixture.get("qa_cases", []),
@@ -175,6 +211,9 @@ def run_all(
             summary_outputs,
         )
 
+        if document_type_result is not None:
+            report.results.append(document_type_result)
+        report.results.extend(semantic_results)
         report.results.extend(qa_results)
         report.results.extend([study_result, flashcard_result])
         if summary_result is not None:
@@ -182,6 +221,99 @@ def run_all(
         report.results.append(source_result)
 
     return report
+
+
+def _evaluate_document_types(
+    fixture_name: str,
+    chunks: list[DocumentChunk],
+    expectation: dict[str, str] | None,
+) -> AreaResult | None:
+    if expectation is None:
+        return None
+
+    result = AreaResult(fixture=fixture_name, area="document types")
+    profiles = detect_document_profiles(chunks)
+    by_name = {
+        chunk.file_name: profiles[chunk.file_path or chunk.file_name].document_type
+        for chunk in chunks
+    }
+    for file_name, expected_type in expectation.items():
+        actual_type = by_name.get(file_name)
+        result.expect(
+            actual_type == expected_type,
+            f"Expected {file_name} to be {expected_type!r}, got {actual_type!r}.",
+        )
+    result.expect(
+        set(by_name) == set(expectation),
+        f"Expected document set {sorted(expectation)}, got {sorted(by_name)}.",
+    )
+    return result
+
+
+def _evaluate_semantic_search(
+    fixture_name: str,
+    chunks: list[DocumentChunk],
+    cases: list[dict[str, Any]],
+    expectations: list[dict[str, Any]],
+) -> list[AreaResult]:
+    expected_by_id = {item["id"]: item for item in expectations}
+    results = []
+
+    for case in cases:
+        case_id = case["id"]
+        result = AreaResult(fixture=fixture_name, area=f"semantic search:{case_id}")
+        expectation = expected_by_id.get(case_id)
+        result.expect(
+            expectation is not None,
+            f"No semantic-search expectation exists for case '{case_id}'.",
+        )
+        if expectation is None:
+            results.append(result)
+            continue
+
+        index = build_index(
+            chunks,
+            search_mode=case["mode"],
+            hybrid_semantic_weight=float(case.get("hybrid_semantic_weight", 0.5)),
+            embedding_provider=FixtureEmbeddingProvider(case),
+        )
+        matches = search(
+            index,
+            case["query"],
+            top_k=int(case.get("top_k", 3)),
+            min_score=float(case.get("minimum_score", 0.0)),
+        )
+        actual_chunks = [match.chunk_index for match in matches]
+        result.expect(
+            index.effective_mode == expectation["effective_mode"],
+            f"Expected mode {expectation['effective_mode']!r}, got {index.effective_mode!r}.",
+        )
+        result.expect(
+            actual_chunks == expectation["result_chunks"],
+            f"Expected result chunks {expectation['result_chunks']}, got {actual_chunks}.",
+        )
+        warning_text = " ".join((index.warning, index.last_search_warning))
+        warning_fragment = expectation.get("warning_contains", "")
+        result.expect(
+            not warning_fragment or warning_fragment.lower() in warning_text.lower(),
+            f"Expected warning containing {warning_fragment!r}, got {warning_text!r}.",
+        )
+        results.append(result)
+
+    unexpected = sorted(set(expected_by_id) - {case["id"] for case in cases})
+    if unexpected:
+        results.append(
+            AreaResult(
+                fixture=fixture_name,
+                area="semantic search:coverage",
+                checks=1,
+                failures=[
+                    "Expected semantic-search case(s) missing from fixture: "
+                    f"{', '.join(unexpected)}"
+                ],
+            )
+        )
+    return results
 
 
 def _evaluate_qa(
@@ -381,13 +513,12 @@ def _evaluate_source_quality(
 
 
 def _build_chunks(fixture_name: str, rows: list[dict[str, Any]]) -> list[DocumentChunk]:
-    file_name = f"{fixture_name}.pdf"
     return [
         DocumentChunk(
             text=row["text"],
-            file_name=file_name,
-            file_path=file_name,
-            file_type="pdf",
+            file_name=row.get("file_name", f"{fixture_name}.pdf"),
+            file_path=row.get("file_path", row.get("file_name", f"{fixture_name}.pdf")),
+            file_type=row.get("file_type", "pdf"),
             chunk_index=int(row["chunk_index"]),
             page_number=row.get("page_number"),
         )
@@ -447,8 +578,17 @@ def _validate_schema(
         raise ValueError(f"{filename}: fixture must contain at least one chunk.")
     if not isinstance(fixture.get("qa_cases", []), list):
         raise ValueError(f"{filename}: qa_cases must be a list.")
+    if not isinstance(fixture.get("semantic_cases", []), list):
+        raise ValueError(f"{filename}: semantic_cases must be a list.")
     if not isinstance(expected.get("qa", []), list):
         raise ValueError(f"{filename}: expected qa must be a list.")
+    if not isinstance(expected.get("semantic_search", []), list):
+        raise ValueError(f"{filename}: expected semantic_search must be a list.")
+    if expected.get("document_types") is not None and not isinstance(
+        expected["document_types"],
+        dict,
+    ):
+        raise ValueError(f"{filename}: expected document_types must be an object.")
     for key in ("study_questions", "flashcards", "source_quality"):
         if not isinstance(expected.get(key), dict):
             raise ValueError(f"{filename}: expected file is missing {key!r}.")

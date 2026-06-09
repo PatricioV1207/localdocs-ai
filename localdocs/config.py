@@ -8,6 +8,8 @@ from typing import Any
 
 import tomllib
 
+from localdocs.embeddings import DEFAULT_EMBEDDING_MODEL
+
 DEFAULT_CONFIG_PATH = Path("localdocs_config.toml")
 
 
@@ -22,6 +24,9 @@ class ChunkingConfig:
 class SearchConfig:
     top_k: int = 4
     minimum_score: float = 0.05
+    mode: str = "tfidf"
+    embedding_model: str = DEFAULT_EMBEDDING_MODEL
+    hybrid_semantic_weight: float = 0.5
 
 
 @dataclass(frozen=True)
@@ -94,6 +99,25 @@ def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> LocalDocsConfig:
 
     top_k = _positive_int(search_section, "top_k", 4, warnings)
     minimum_score = _score(search_section, "minimum_score", 0.05, warnings)
+    search_mode = _choice(
+        search_section,
+        "mode",
+        "tfidf",
+        {"tfidf", "semantic", "hybrid"},
+        warnings,
+    )
+    embedding_model = _string(
+        search_section,
+        "embedding_model",
+        DEFAULT_EMBEDDING_MODEL,
+        warnings,
+    )
+    hybrid_semantic_weight = _score(
+        search_section,
+        "hybrid_semantic_weight",
+        0.5,
+        warnings,
+    )
     export_dir = _string(exports_section, "export_dir", "exports", warnings)
     use_openai = _bool(llm_section, "use_openai_if_available", False, warnings)
     max_flashcards = _positive_int(study_section, "max_flashcards", 10, warnings)
@@ -103,7 +127,13 @@ def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> LocalDocsConfig:
 
     return LocalDocsConfig(
         chunking=ChunkingConfig(strategy=strategy, chunk_size=chunk_size, chunk_overlap=chunk_overlap),
-        search=SearchConfig(top_k=top_k, minimum_score=minimum_score),
+        search=SearchConfig(
+            top_k=top_k,
+            minimum_score=minimum_score,
+            mode=search_mode,
+            embedding_model=embedding_model,
+            hybrid_semantic_weight=hybrid_semantic_weight,
+        ),
         exports=ExportsConfig(export_dir=export_dir),
         llm=LLMConfig(use_openai_if_available=use_openai),
         study=StudyConfig(max_flashcards=max_flashcards, max_questions=max_questions),

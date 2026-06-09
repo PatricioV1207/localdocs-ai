@@ -11,9 +11,16 @@
 - Spanish study questions no longer confuse the verb `funciona` with the noun
   `función`.
 - The evaluation command is integrated into GitHub Actions.
-- Open-source presentation materials are aligned with the v0.3.5 MVP.
+- Open-source presentation materials are aligned with the v0.4.0 MVP.
 - Validation profiles provide smaller development feedback without weakening
   the final release gate.
+- Optional semantic and hybrid retrieval use an injectable local embedding
+  provider while retaining TF-IDF as the always-available fallback.
+- Semantic quality checks use deterministic fake vectors and require no model
+  download.
+- General document intelligence detects five document types and reusable
+  section roles without topic-specific concept lists.
+- Study and flashcard templates now respond to document structure.
 
 ## Completed
 
@@ -56,6 +63,14 @@
 - Verified the optimized workflow: `fast` passed 18 smoke tests, focused QA
   passed 23 tests and 237 relevant checks, and the single final `full` run
   passed all release gates.
+- Added semantic, hybrid, index-failure, query-failure, invalid-vector, and
+  dimension-mismatch coverage.
+- Added multidomain fixtures for academic practice, a technical procedure,
+  research findings, a service agreement, and generic community content.
+- Completed the v0.4.0 release gate with 110 pytest tests and 273 deterministic
+  quality checks on Python 3.13.
+- Completed the general-retrieval v0.4.0 gate with 125 pytest tests and 316
+  deterministic quality checks on Python 3.13.
 
 ## Validation Checklist
 
@@ -77,11 +92,18 @@
   pull request, and manual triggers are configured, and the Python 3.11/3.12
   matrix runs pytest, compileall, and deterministic quality evaluations
 
-Update this checklist with the latest verified state when quality behavior or
-fixtures change.
+- [x] v0.4.0 `python scripts/validate.py full` - 110 tests passed on Python 3.13
+- [x] v0.4.0 deterministic quality evaluation - 273 checks passed
+- [x] v0.4.0 general retrieval gate - 125 tests and 316 quality checks passed
+
+The v0.3.5 checklist entries remain as historical verification; the v0.4.0
+entries are the current release evidence.
 
 ## Next Quality Work
 
 - Add fixtures only when a concrete document-quality regression is found.
 - Keep expectations deterministic and source-grounded.
-- Avoid expanding this system into semantic search, OCR, or other v0.4 features.
+- Add retrieval fixtures only for concrete semantic or lexical regressions.
+- Keep model-backed retrieval optional and preserve automatic TF-IDF fallback.
+- Expand structural markers only from general document patterns, not a single
+  subject-matter vocabulary.

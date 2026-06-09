@@ -309,115 +309,52 @@ CONCEPT_BOUNDARIES = {
     "utilizan",
 }
 
-TECHNICAL_HINTS = {
-    "actuador",
-    "actuadores",
-    "actuator",
-    "actuators",
-    "air",
-    "aire",
-    "anki",
-    "antirretorno",
-    "categoría",
-    "categoria",
-    "circuit",
-    "circuits",
-    "circuito",
-    "circuitos",
-    "chunking",
-    "compressed",
-    "comprimido",
-    "control",
-    "descarga",
-    "eléctrica",
-    "eléctrico",
-    "eléctricos",
-    "elevadora",
-    "emergencia",
-    "evaluación",
-    "evacuación",
-    "iso",
-    "nivel",
-    "neumática",
-    "neumático",
-    "neumáticos",
-    "obsidian",
-    "pneumatic",
-    "plataforma",
-    "parada",
-    "pressure",
-    "prestaciones",
-    "presión",
-    "prevención",
-    "relé",
-    "relés",
-    "retrieval",
-    "riesgo",
-    "riesgos",
-    "reducción",
-    "residual",
-    "safety",
-    "search",
-    "seguridad",
-    "sensor",
-    "sensores",
-    "sistema",
-    "sistemas",
-    "system",
-    "systems",
-    "técnica",
-    "unidad",
-    "vault",
-    "base",
-    "knowledge",
-    "mantenimiento",
-    "monitorización",
-    "monitorizacion",
-    "posición",
-    "posicion",
-    "requerido",
-    "segura",
-    "tratamiento",
-    "velocidad",
-    "flashcards",
-    "searchable",
-    "strategies",
-    "válvula",
-    "válvulas",
-    "valve",
-    "valves",
-}
-
-PREFERRED_SECTION_PATTERNS = [
+STRUCTURAL_SECTION_PATTERNS = [
+    r"\babstract\b",
+    r"\bsummary\b",
     r"\bintroduction\b",
     r"\boverview\b",
     r"\bobjectives?\b",
+    r"\blearning outcomes?\b",
+    r"\bmethods?\b",
+    r"\bmethodology\b",
+    r"\bresults?\b",
+    r"\bdiscussion\b",
+    r"\bconclusions?\b",
+    r"\bprocedures?\b",
+    r"\binstallation\b",
+    r"\boperation\b",
+    r"\bmaintenance\b",
+    r"\brequirements?\b",
+    r"\bobligations?\b",
+    r"\bexamples?\b",
+    r"\bcase stud(?:y|ies)\b",
     r"\bsafety\b",
     r"\bcomponents?\b",
     r"\bexercises?\b",
     r"\btechnical\b",
+    r"\bresumen\b",
     r"\bintroducci[oó]n\b",
+    r"\bdescripci[oó]n general\b",
     r"\bobjetivos?\b",
+    r"\bresultados? de aprendizaje\b",
+    r"\bm[eé]todos?\b",
+    r"\bmetodolog[ií]a\b",
+    r"\bresultados?\b",
+    r"\bdiscusi[oó]n\b",
+    r"\bconclusiones?\b",
+    r"\bprocedimientos?\b",
+    r"\binstalaci[oó]n\b",
+    r"\boperaci[oó]n\b",
+    r"\bmantenimiento\b",
+    r"\brequisitos?\b",
+    r"\bobligaciones?\b",
+    r"\bejemplos?\b",
+    r"\bcasos? pr[aá]cticos?\b",
     r"\bseguridad\b",
     r"\bcomponentes?\b",
     r"\bejercicios?\b",
     r"\bt[eé]cnic[oa]s?\b",
-    r"\bfunciones de seguridad t[ií]picas\b",
-    r"\bdescarga segura del sistema\b",
-    r"\bdescarga segura del actuador\b",
-    r"\bprevenci[oó]n de arranque inesperado\b",
-    r"\bparada segura\b",
-    r"\bvelocidad reducida segura\b",
-    r"\bmantenimiento seguro\b",
-    r"\bmonitorizaci[oó]n de presi[oó]n segura\b",
-    r"\bposici[oó]n segura\b",
-    r"\bcircuitos neum[aá]ticos\b",
-    r"\biso\s*13849\b",
-    r"\bdescripci[oó]n del circuito\b",
-    r"\bevaluaci[oó]n de riesgos\b",
-    r"\breducci[oó]n de riesgos\b",
-    r"\bniveles? de prestaciones(?: requerido)?\b",
-    r"\bcategor[ií]a\s*[134]?\b",
 ]
 
 SHORT_TECHNICAL_TERMS = {"air", "api", "gas", "iso", "oil", "pdf", "sql"}
@@ -483,7 +420,7 @@ def is_low_value_text(text: str) -> bool:
         return True
 
     pattern_hits = sum(1 for pattern in LOW_VALUE_PATTERNS if re.search(pattern, lower))
-    preferred_hits = sum(1 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, lower))
+    preferred_hits = sum(1 for pattern in STRUCTURAL_SECTION_PATTERNS if re.search(pattern, lower))
     if pattern_hits >= 2 and preferred_hits == 0:
         return True
 
@@ -531,10 +468,10 @@ def chunk_quality_score(chunk: DocumentChunk) -> float:
     score += min(len(sentences), 4) * 0.4
     score += min(technical_terms, 12) * 0.15
     score += min(headings, 3) * 0.3
-    score += sum(2.0 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, text.lower()))
+    score += sum(2.0 for pattern in STRUCTURAL_SECTION_PATTERNS if re.search(pattern, text.lower()))
     score -= sum(1.5 for pattern in LOW_VALUE_PATTERNS if re.search(pattern, text.lower()))
     if chunk.page_number in {1, 2} and not any(
-        re.search(pattern, text.lower()) for pattern in PREFERRED_SECTION_PATTERNS
+        re.search(pattern, text.lower()) for pattern in STRUCTURAL_SECTION_PATTERNS
     ):
         score -= 0.75
     return score
@@ -611,7 +548,7 @@ def sentence_quality_score(sentence: str, query_terms: set[str] | None = None) -
         lower,
     ):
         score += 2.0
-    if any(re.search(pattern, lower) for pattern in PREFERRED_SECTION_PATTERNS):
+    if any(re.search(pattern, lower) for pattern in STRUCTURAL_SECTION_PATTERNS):
         score += 1.5
     if compact[-1:] in ".!?":
         score += 0.25
@@ -637,11 +574,13 @@ def is_quality_sentence(sentence: str) -> bool:
     if re.search(
         r"\brango de descarga segura del funciones de seguridad\b|"
         r"\b(?:del|de la)\s+funciones de seguridad t[ií]picas\b|"
-        r"\bcircuitos neum[aá]ticos iso\s*13849\s+funci[oó]n de seguridad\b",
+        r"\bcircuitos neum[aá]ticos iso\s*13849\s+funci[oó]n de seguridad\b|"
+        r"\bdescarga segura del sistema prevenci[oó]n de arranque inesperado "
+        r"circuitos neum[aá]ticos iso\b",
         lower,
     ):
         return False
-    section_hits = sum(1 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, lower))
+    section_hits = sum(1 for pattern in STRUCTURAL_SECTION_PATTERNS if re.search(pattern, lower))
     has_technical_action = bool(
         re.search(
             r"\b(?:bloquea|conmuta|controla|detecta|evacua|evita|garantiza|"
@@ -720,11 +659,16 @@ def is_weak_concept(value: str) -> bool:
         lower,
     ):
         return False
-    if any(word in WEAK_TERMS and word not in CONCEPT_CONNECTORS for word in words):
-        return True
     if all(word in WEAK_TERMS or re.fullmatch(r"[ivxlcdm]+|\d+", word) for word in words):
         return True
     informative = [word for word in words if _is_informative_term(word)]
+    weak = [
+        word
+        for word in words
+        if word in WEAK_TERMS and word not in CONCEPT_CONNECTORS
+    ]
+    if weak and len(informative) < 2:
+        return True
     return len(informative) < 2
 
 

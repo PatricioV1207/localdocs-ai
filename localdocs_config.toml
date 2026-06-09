@@ -6,6 +6,9 @@ chunk_overlap = 40
 [search]
 top_k = 4
 minimum_score = 0.05
+mode = "tfidf"
+embedding_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+hybrid_semantic_weight = 0.5
 
 [exports]
 export_dir = "exports"

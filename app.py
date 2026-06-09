@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from localdocs.chunker import chunk_blocks
 from localdocs.cleaning import appears_spanish, invalid_question_message, is_valid_question
 from localdocs.config import DEFAULT_CONFIG_PATH, load_config
+from localdocs.embeddings import DEFAULT_EMBEDDING_MODEL
 from localdocs.export import export_qa_history, export_summaries
 from localdocs.flashcards import export_anki_tsv, generate_flashcards
 from localdocs.indexer import build_index
@@ -40,6 +41,20 @@ def main() -> None:
             st.warning(warning)
 
         with st.expander("Advanced settings"):
+            search_mode = st.selectbox(
+                "Search mode",
+                options=["tfidf", "semantic", "hybrid"],
+                index=["tfidf", "semantic", "hybrid"].index(config.search.mode),
+                format_func=lambda value: {
+                    "tfidf": "TF-IDF",
+                    "semantic": "Semantic",
+                    "hybrid": "Hybrid",
+                }[value],
+                help=(
+                    "TF-IDF is always available. Semantic and hybrid modes require "
+                    "the optional sentence-transformers dependency and a local model."
+                ),
+            )
             chunk_strategy = st.selectbox(
                 "Chunking strategy",
                 options=["word", "paragraph", "heading"],
@@ -79,6 +94,22 @@ def main() -> None:
                 format="%.2f",
                 help="Minimum similarity score required for evidence. Raise it to be stricter; lower it if useful answers are missed.",
             )
+            hybrid_semantic_weight = st.slider(
+                "Hybrid semantic weight",
+                min_value=0.0,
+                max_value=1.0,
+                value=config.search.hybrid_semantic_weight,
+                step=0.05,
+                disabled=search_mode != "hybrid",
+                help="Higher values give semantic similarity more influence in hybrid ranking.",
+            )
+            embedding_model = st.text_input(
+                "Embedding model",
+                value=config.search.embedding_model,
+                disabled=search_mode == "tfidf",
+                help="Sentence Transformers model name or local model path.",
+            )
+            st.caption("Reprocess documents after changing the search mode or embedding model.")
         use_openai = st.checkbox("Use OpenAI if available", value=config.llm.use_openai_if_available)
         api_key = os.getenv("OPENAI_API_KEY") if use_openai else None
         if api_key:
@@ -107,13 +138,29 @@ def main() -> None:
             else:
                 blocks, errors = _parse_uploads(uploaded_files)
                 _show_errors(errors)
-                _store_index(blocks, int(chunk_size), int(overlap), chunk_strategy)
+                _store_index(
+                    blocks,
+                    int(chunk_size),
+                    int(overlap),
+                    chunk_strategy,
+                    search_mode,
+                    embedding_model,
+                    float(hybrid_semantic_weight),
+                )
 
     with sample_col:
         if st.button("Process sample documents", use_container_width=True):
             blocks, errors = _parse_sample_docs()
             _show_errors(errors)
-            _store_index(blocks, int(chunk_size), int(overlap), chunk_strategy)
+            _store_index(
+                blocks,
+                int(chunk_size),
+                int(overlap),
+                chunk_strategy,
+                search_mode,
+                embedding_model,
+                float(hybrid_semantic_weight),
+            )
 
     _show_index_status()
 
@@ -135,6 +182,8 @@ def main() -> None:
                 top_k=int(top_k),
                 min_score=float(minimum_score),
             )
+            if st.session_state.index.last_search_warning:
+                st.warning(st.session_state.index.last_search_warning)
             answer = answer_question(
                 question,
                 results,
@@ -227,7 +276,15 @@ def _parse_sample_docs() -> tuple[list, list[str]]:
     return blocks, errors
 
 
-def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> None:
+def _store_index(
+    blocks: list,
+    chunk_size: int,
+    overlap: int,
+    strategy: str,
+    search_mode: str = "tfidf",
+    embedding_model: str = "",
+    hybrid_semantic_weight: float = 0.5,
+) -> None:
     if overlap >= chunk_size:
         st.error("Chunk overlap must be smaller than chunk size.")
         return
@@ -245,11 +302,18 @@ def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> 
 
     st.session_state.chunks = chunks
     st.session_state.document_names = sorted({block.file_name for block in blocks})
-    st.session_state.index = build_index(chunks)
+    st.session_state.index = build_index(
+        chunks,
+        search_mode=search_mode,
+        embedding_model=embedding_model or DEFAULT_EMBEDDING_MODEL,
+        hybrid_semantic_weight=hybrid_semantic_weight,
+    )
     _clear_derived_state(st.session_state)
 
     if chunks and st.session_state.index.is_ready:
         st.success(f"Processed {len(st.session_state.document_names)} document(s) into {len(chunks)} chunk(s).")
+        if st.session_state.index.warning:
+            st.warning(st.session_state.index.warning)
     elif chunks:
         st.warning("Parsed the documents into chunks, but no searchable terms were found.")
     else:
@@ -295,6 +359,18 @@ def _show_index_status() -> None:
     with st.expander("Processed file names", expanded=True):
         for file_name in st.session_state.document_names:
             st.markdown(f"- {file_name}")
+    index = st.session_state.index
+    st.caption(f"Search mode: {_search_mode_label(index.effective_mode)}")
+    if index.requested_mode != index.effective_mode:
+        st.caption(f"Requested mode: {_search_mode_label(index.requested_mode)}")
+    if index.document_profiles:
+        detected = sorted(
+            {
+                _document_type_label(profile.document_type)
+                for profile in index.document_profiles.values()
+            }
+        )
+        st.caption(f"Detected document type(s): {', '.join(detected)}")
 
 
 def _show_latest_answer() -> None:
@@ -451,6 +527,24 @@ def _clear_answer_state(state: MutableMapping[str, Any]) -> None:
 def _index_ready() -> bool:
     index = st.session_state.index
     return bool(index and index.is_ready)
+
+
+def _search_mode_label(mode: str) -> str:
+    return {
+        "tfidf": "TF-IDF",
+        "semantic": "Semantic",
+        "hybrid": "Hybrid",
+    }.get(mode, mode)
+
+
+def _document_type_label(document_type: str) -> str:
+    return {
+        "academic_practice": "Academic practice",
+        "technical_manual": "Technical manual",
+        "research_paper": "Research paper",
+        "legal_business": "Legal/business",
+        "generic": "Generic",
+    }.get(document_type, document_type)
 
 
 if __name__ == "__main__":

@@ -174,6 +174,10 @@ def _extractive_answer(
             continue
         if selected and _is_redundant(sentence, [item[0] for item in selected]):
             continue
+        if len(concepts) == 1:
+            overlap = len(question_terms & informative_terms(sentence))
+            if overlap < min(2, len(question_terms)):
+                continue
         if len(concepts) >= 2 and len(selected) >= len(concepts):
             if not _connects_requested_concepts(sentence, concepts):
                 continue

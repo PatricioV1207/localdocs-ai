@@ -5,7 +5,7 @@
 **Private, cited document intelligence that runs locally by default.**
 
 [![Quality gates](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.5-2563eb.svg)](RELEASE_NOTES.md)
+[![Version](https://img.shields.io/badge/version-v0.4.0-2563eb.svg)](RELEASE_NOTES.md)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-ff4b4b.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16a34a.svg)](LICENSE)
@@ -17,7 +17,7 @@ LocalDocs AI turns PDF, DOCX, TXT, and Markdown files into a private searchable
 knowledge base with cited answers, summaries, study questions, flashcards, and
 portable exports.
 
-> **Project status:** v0.3.5 is a functional, contributor-friendly MVP. It is
+> **Project status:** v0.4.0 is a functional, contributor-friendly MVP. It is
 > intentionally simple and does not aim to be a production multi-user platform.
 
 ## Local-First by Default
@@ -40,11 +40,14 @@ release screenshots lives in
 
 - Parse PDF, DOCX, TXT, Markdown, and `.markdown` files.
 - Chunk documents with `word`, `paragraph`, or Markdown `heading` strategies.
-- Search locally with scikit-learn TF-IDF.
+- Search locally with TF-IDF, optional semantic embeddings, or hybrid ranking.
+- Fall back automatically to TF-IDF when optional embeddings are unavailable.
+- Detect academic-practice, technical-manual, research-paper, legal/business,
+  and generic documents from local structural signals.
 - Ask questions and get cited answers.
 - Fall back to concise heuristic extractive answers without an API key.
 - Generate basic summaries.
-- Generate grammar-validated study questions and same-language flashcards with source references.
+- Generate structure-aware study questions and flashcards with source references.
 - Prefer fewer high-quality study items over filling the configured limit with weak content.
 - Export summaries and Q&A history to Markdown.
 - Export an Obsidian-friendly Markdown vault.
@@ -54,7 +57,7 @@ release screenshots lives in
 
 ## Not Included
 
-LocalDocs AI v0.3.5 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
+LocalDocs AI v0.4.0 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
 
 ## Supported Formats
 
@@ -63,7 +66,7 @@ LocalDocs AI v0.3.5 intentionally does not include user accounts, authentication
 - TXT files
 - Markdown files (`.md` and `.markdown`)
 
-PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.5.
+PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.4.0.
 
 ## Quick Start
 
@@ -75,6 +78,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+TF-IDF is the default and needs no model. To enable semantic and hybrid search,
+install the optional local embedding dependency:
+
+```bash
+pip install -r requirements-embeddings.txt
+```
+
+The default Sentence Transformers model is downloaded on first use and cached
+locally. After that, retrieval runs on the local machine. A local model path can
+be configured for an entirely pre-provisioned setup.
 
 On Windows, activate the virtual environment with:
 
@@ -123,6 +137,9 @@ chunk_overlap = 40
 [search]
 top_k = 4
 minimum_score = 0.05
+mode = "tfidf"
+embedding_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+hybrid_semantic_weight = 0.5
 
 [exports]
 export_dir = "exports"
@@ -154,8 +171,15 @@ Chunk and search settings are available in the app sidebar under `Advanced setti
 - `Chunk overlap`: repeats words between word-based chunks to preserve context.
 - `Search results`: controls how many chunks are retrieved for a question.
 - `Minimum search score`: filters weak matches before QA.
+- `Search mode`: chooses `TF-IDF`, `Semantic`, or `Hybrid` retrieval.
+- `Hybrid semantic weight`: balances semantic and TF-IDF scores in hybrid mode.
+- `Embedding model`: selects a Sentence Transformers model name or local path.
 
-The defaults are intentionally conservative. Raise the minimum score for stricter answers, or lower it if useful evidence is being missed.
+The defaults are intentionally conservative. TF-IDF remains the default and is
+always built. Semantic mode ranks normalized local embeddings by cosine
+similarity. Hybrid mode combines TF-IDF and semantic scores. If the optional
+package, model, document embeddings, or query embedding is unavailable,
+LocalDocs shows a warning and continues with TF-IDF.
 
 ## Obsidian Export
 
@@ -273,6 +297,8 @@ Each fixture has a matching expected file. The runner checks grounding,
 citations, required concepts, forbidden fragments, grammatical questions,
 complete QA sentences, summary evidence, flashcard answer relevance, and
 rejection of legal, index, contact, product, marketing, and broken-OCR sources.
+Semantic retrieval fixtures use deterministic fake vectors, so validation does
+not download a model or require `sentence-transformers`.
 
 See [PROGRESS.md](PROGRESS.md) for current status and
 [DECISIONS.md](DECISIONS.md) for design decisions.
@@ -292,6 +318,8 @@ localdocs-ai/
 │   ├── chunker.py
 │   ├── cleaning.py
 │   ├── concepts.py
+│   ├── embeddings.py
+│   ├── document_types.py
 │   ├── indexer.py
 │   ├── search.py
 │   ├── qa.py
@@ -314,6 +342,7 @@ localdocs-ai/
 ├── DECISIONS.md
 ├── app.py
 ├── localdocs_config.toml
+├── requirements-embeddings.txt
 ├── CONTRIBUTING.md
 ├── SECURITY.md
 ├── DEMO.md
@@ -332,7 +361,14 @@ feature request.
 
 - PDF parsing depends on extractable text.
 - DOCX parsing reads normal paragraphs only; legacy `.doc` files are not supported.
-- Search is keyword-oriented TF-IDF, not semantic search.
+- Semantic quality depends on the selected embedding model and adds local model
+  storage, indexing time, and memory use.
+- The semantic index is in memory only and is rebuilt when documents are processed.
+- Hybrid weighting is global and intentionally simple in v0.4.
+- Document-type detection is heuristic; mixed or unusual documents may be
+  classified as `generic`.
+- Structural generation recognizes common definitions, objectives, procedures,
+  results, obligations, questions, examples, and overview sections.
 - Local answers select and join source sentences heuristically; they are not full abstractive summaries.
 - Cleaning, grammatical validation, and concept extraction are heuristic and may still miss specialized terminology or unusual layouts.
 - Strict quality filters can return fewer study questions or flashcards than the configured maximum.
@@ -364,5 +400,5 @@ LocalDocs AI is released under the MIT License. See [LICENSE](LICENSE).
 
 ## Release Notes
 
-See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the presentation-ready v0.3.5
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the v0.4.0
 summary and [CHANGELOG.md](CHANGELOG.md) for the full version history.

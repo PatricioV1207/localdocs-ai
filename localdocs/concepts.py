@@ -1,4 +1,4 @@
-"""Deterministic technical concept extraction for study tools and local QA."""
+"""Deterministic, structure-aware concept extraction."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from localdocs.cleaning import (
     CONCEPT_BOUNDARIES,
     CONCEPT_CONNECTORS,
-    TECHNICAL_HINTS,
     WEAK_TERMS,
     informative_terms,
     is_weak_concept,
@@ -23,52 +22,6 @@ class _Candidate:
     score: float
     position: int
 
-
-DOMAIN_PATTERNS: list[tuple[str, float]] = [
-    (r"\bprevenci[oó]n de arranque inesperado\b", 135.0),
-    (r"\bdescarga segura del actuador\b", 134.0),
-    (r"\bdescarga segura del sistema\b", 133.0),
-    (r"\bvelocidad reducida segura\b", 133.0),
-    (r"\bmantenimiento seguro\b", 133.0),
-    (r"\bmonitorizaci[oó]n de presi[oó]n segura\b", 133.0),
-    (r"\bposici[oó]n segura\b", 133.0),
-    (r"\bcircuitos el[eé]ctricos de seguridad\b", 132.0),
-    (r"\bv[aá]lvula relacionada con la seguridad(?:\s+\d+[a-z]\d+)?\b", 141.0),
-    (r"\bunidad de rel[eé]s de seguridad\b", 133.0),
-    (r"\bunidades de tratamiento de aire\b", 130.0),
-    (r"\balimentaci[oó]n de energ[ií]a el[eé]ctrica\b", 129.0),
-    (r"\balimentaci[oó]n de aire comprimido\b", 128.0),
-    (r"\bseguridad en sistemas neum[aá]ticos\b", 127.0),
-    (r"\bevaluaci[oó]n de riesgos\b", 126.0),
-    (r"\breducci[oó]n de riesgos\b", 125.0),
-    (r"\bevacuaci[oó]n de presi[oó]n residual\b", 124.0),
-    (r"\bpresi[oó]n residual\b", 123.0),
-    (r"\bv[aá]lvula\s+\d+[a-z]\d+\b", 142.0),
-    (r"\bv[aá]lvula antirretorno\b", 122.0),
-    (r"\brel[eé] de seguridad\b", 121.0),
-    (r"\bsensores? de presi[oó]n\b", 120.0),
-    (r"\bcircuitos? neum[aá]ticos\b", 119.0),
-    (r"\bt[eé]cnica de seguridad\b", 118.0),
-    (r"\bniveles? de prestaciones(?: requerido)?\b", 117.0),
-    (r"\bcategor[ií]a\s*[134]\b", 116.0),
-    (r"\biso\s*13849(?:-\d+)?\b", 115.0),
-    (r"\biso\s*12100\b", 114.0),
-    (r"\bparada de emergencia\b", 113.0),
-    (r"\bparada segura\b", 112.0),
-    (r"\bplataforma elevadora\b", 111.0),
-    (r"\baire comprimido\b", 110.0),
-    (r"\bfunci[oó]n de seguridad\b", 105.0),
-    (r"\bpressure sensors?\b", 104.0),
-    (r"\bpneumatic actuators?\b", 103.0),
-    (r"\bpressure regulation\b", 102.0),
-    (r"\bsimple tf-idf search\b", 102.0),
-    (r"\btf-idf search\b", 101.0),
-    (r"\bsearchable knowledge base\b", 100.0),
-    (r"\blocal search\b", 99.0),
-    (r"\bchunking strategies\b", 98.0),
-    (r"\banki-compatible flashcards\b", 97.0),
-    (r"\bobsidian vault export\b", 96.0),
-]
 
 GENERIC_HEADINGS = {
     "descripción del circuito",
@@ -123,6 +76,51 @@ DEFINITION_MARKERS = (
     "consiste en",
 )
 
+ACTION_MARKERS = (
+    "are",
+    "allows",
+    "blocks",
+    "controls",
+    "converts",
+    "creates",
+    "detects",
+    "ensures",
+    "generates",
+    "prevents",
+    "provides",
+    "reduces",
+    "regulates",
+    "requires",
+    "stabilizes",
+    "stops",
+    "supervises",
+    "supports",
+    "uses",
+    "is",
+    "bloquea",
+    "controla",
+    "convierte",
+    "crea",
+    "descarga",
+    "detecta",
+    "detiene",
+    "evita",
+    "garantiza",
+    "genera",
+    "permite",
+    "previene",
+    "proporciona",
+    "reduce",
+    "regula",
+    "requiere",
+    "supervisa",
+    "utiliza",
+    "es",
+    "son",
+)
+
+OBJECT_MARKERS = {"uses", "utiliza", "requires", "requiere", "includes", "incluye"}
+
 
 def extract_concepts(text: str, limit: int = 3) -> list[str]:
     """Extract ranked, coherent technical concepts from a text block."""
@@ -131,10 +129,12 @@ def extract_concepts(text: str, limit: int = 3) -> list[str]:
         return []
 
     candidates: list[_Candidate] = []
-    candidates.extend(_domain_candidates(text))
+    candidates.extend(_question_target_candidates(text))
     candidates.extend(_definition_candidates(text))
     candidates.extend(_heading_candidates(text))
     candidates.extend(_bold_candidates(text))
+    candidates.extend(_identifier_candidates(text))
+    candidates.extend(_sentence_structure_candidates(text))
     candidates.extend(_noun_phrase_candidates(text))
 
     best_by_key: dict[str, _Candidate] = {}
@@ -279,13 +279,6 @@ def related_concept(text: str, excluded: str) -> str:
     ]
     if not candidates:
         return ""
-    domain_candidates = [
-        concept
-        for concept in candidates
-        if any(re.fullmatch(pattern, concept, flags=re.IGNORECASE) for pattern, _score in DOMAIN_PATTERNS)
-    ]
-    if domain_candidates:
-        candidates = domain_candidates
     lower_text = text.lower()
     return min(
         candidates,
@@ -295,23 +288,6 @@ def related_concept(text: str, excluded: str) -> str:
             else len(lower_text)
         ),
     )
-
-
-def _domain_candidates(text: str) -> list[_Candidate]:
-    candidates: list[_Candidate] = []
-    for section in re.finditer(r"[^.!?;\n]+", text):
-        if _is_broken_fragment(section.group()):
-            continue
-        for pattern, score in DOMAIN_PATTERNS:
-            for match in re.finditer(pattern, section.group(), flags=re.IGNORECASE):
-                candidates.append(
-                    _Candidate(
-                        _format_domain_phrase(match.group()),
-                        score,
-                        section.start() + match.start(),
-                    )
-                )
-    return candidates
 
 
 def _definition_candidates(text: str) -> list[_Candidate]:
@@ -325,6 +301,25 @@ def _definition_candidates(text: str) -> list[_Candidate]:
         )
         if match:
             candidates.append(_Candidate(match.group("concept"), 125.0, text.lower().find(sentence.lower())))
+    return candidates
+
+
+def _question_target_candidates(text: str) -> list[_Candidate]:
+    candidates: list[_Candidate] = []
+    match = re.search(
+        r"(?:what is|what are|define|qu[eé] es|qu[eé] son|defin[ea])\s+(.+?)[?]?$",
+        text.strip(" ¿"),
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return candidates
+    target = match.group(1).strip(" ?")
+    for part in re.split(
+        r"\s+(?:and|y|e)\s+(?:the|el|la|los|las|un|una)?\s*",
+        target,
+        flags=re.IGNORECASE,
+    ):
+        candidates.append(_Candidate(part, 130.0, match.start(1)))
     return candidates
 
 
@@ -351,6 +346,68 @@ def _bold_candidates(text: str) -> list[_Candidate]:
     return candidates
 
 
+def _identifier_candidates(text: str) -> list[_Candidate]:
+    """Extract standards, acronyms, and component-like identifiers generically."""
+
+    candidates: list[_Candidate] = []
+    patterns = (
+        r"\b[A-Z]{2,}(?:[- ]?\d+(?:-\d+)*)?\b",
+        r"\b\d+[A-Za-z]\d+\b",
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, text):
+            prefix = text[max(0, match.start() - 40):match.start()]
+            words = [
+                word
+                for word in re.findall(r"[A-Za-zÀ-ÿ]+", prefix)
+                if word.lower() not in CONCEPT_CONNECTORS
+                and word.lower() not in WEAK_TERMS
+            ]
+            label = " ".join(words[-1:] + [match.group()])
+            candidates.append(_Candidate(label, 112.0, match.start()))
+    return candidates
+
+
+def _sentence_structure_candidates(text: str) -> list[_Candidate]:
+    """Extract grammatical subjects and selected objects around action verbs."""
+
+    candidates: list[_Candidate] = []
+    marker_pattern = "|".join(
+        re.escape(marker)
+        for marker in sorted(ACTION_MARKERS, key=len, reverse=True)
+    )
+    object_pattern = "|".join(
+        re.escape(marker)
+        for marker in sorted(OBJECT_MARKERS, key=len, reverse=True)
+    )
+    for sentence in split_sentences(text):
+        position = text.lower().find(sentence.lower())
+        subject_match = re.match(
+            rf"^(?:the|el|la|los|las|un|una)?\s*(?P<subject>.+?)\s+"
+            rf"(?P<verb>{marker_pattern})\b",
+            sentence,
+            flags=re.IGNORECASE,
+        )
+        if subject_match:
+            subject = subject_match.group("subject")
+            for part in re.split(
+                r"\s+(?:and|y|e)\s+(?:the|el|la|los|las|un|una)?\s*",
+                subject,
+                flags=re.IGNORECASE,
+            ):
+                candidates.append(_Candidate(part, 115.0, position))
+
+        object_match = re.search(
+            rf"\b(?:{object_pattern})\s+(?P<object>.+?)(?:\s+(?:so|because|"
+            rf"para que|porque)\b|[.;]|$)",
+            sentence,
+            flags=re.IGNORECASE,
+        )
+        if object_match:
+            candidates.append(_Candidate(object_match.group("object"), 105.0, position))
+    return candidates
+
+
 def _noun_phrase_candidates(text: str) -> list[_Candidate]:
     candidates: list[_Candidate] = []
     for section in re.finditer(r"[^.!?;\n]+", text):
@@ -363,7 +420,7 @@ def _noun_phrase_candidates(text: str) -> list[_Candidate]:
             while current and current[-1].lower() in CONCEPT_CONNECTORS:
                 current.pop()
             phrase = " ".join(current)
-            if phrase and _has_technical_signal(phrase):
+            if phrase and _has_structural_signal(phrase):
                 candidates.append(_Candidate(phrase, 60.0, section.start()))
             current.clear()
 
@@ -393,6 +450,14 @@ def _noun_phrase_candidates(text: str) -> list[_Candidate]:
 def _valid_concept(phrase: str) -> bool:
     if not phrase or is_weak_concept(phrase):
         return False
+    if _is_broken_fragment(phrase):
+        return False
+    if re.match(
+        r"^(?:what|which|how|why|where|when|qu[eé]|cu[aá]l|c[oó]mo|por qu[eé])\b",
+        phrase,
+        flags=re.IGNORECASE,
+    ):
+        return False
     if concept_key(phrase) in GENERIC_HEADINGS:
         return False
     if concept_key(phrase) in GENERIC_CONCEPTS:
@@ -400,7 +465,17 @@ def _valid_concept(phrase: str) -> bool:
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", phrase.lower())
     if len(words) > 8:
         return False
-    if any(word in WEAK_TERMS and word not in CONCEPT_CONNECTORS for word in words):
+    informative = [
+        word
+        for word in words
+        if word not in WEAK_TERMS and word not in CONCEPT_CONNECTORS
+    ]
+    weak = [
+        word
+        for word in words
+        if word in WEAK_TERMS and word not in CONCEPT_CONNECTORS
+    ]
+    if weak and len(informative) < 2:
         return False
     if re.search(
         r"\b(copyright|contacto|direcci[oó]n|tel[eé]fono|informaci[oó]n legal|"
@@ -409,15 +484,19 @@ def _valid_concept(phrase: str) -> bool:
         flags=re.IGNORECASE,
     ):
         return False
-    return _has_technical_signal(phrase)
+    return _has_structural_signal(phrase)
 
 
-def _has_technical_signal(phrase: str) -> bool:
+def _has_structural_signal(phrase: str) -> bool:
     lower = phrase.lower()
-    terms = set(re.findall(r"[A-Za-zÀ-ÿ]+", lower))
-    return bool(
-        terms & TECHNICAL_HINTS
-        or re.search(r"\biso\s*\d+|\bcategor[ií]a\s*[134]|\b\d+[a-z]\d+\b|tf-idf", lower)
+    words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
+    informative = [
+        word
+        for word in words
+        if word not in WEAK_TERMS and word not in CONCEPT_CONNECTORS
+    ]
+    return len(informative) >= 2 or bool(
+        re.search(r"\b[A-Z]{2,}\d*\b|\b\d+[A-Za-z]\d+\b|\b\w+-\w+\b", phrase)
     )
 
 
@@ -435,17 +514,6 @@ def _clean_phrase(value: str) -> str:
     compact = re.sub(r"^[#*_]+\s*|\s*[#*_]+$", "", value.strip())
     compact = re.sub(r"^(?:el|la|los|las|un|una)\s+", "", compact, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", compact).strip(" .,:;-")
-
-
-def _format_domain_phrase(value: str) -> str:
-    compact = _clean_phrase(value)
-    if compact.lower().startswith("iso "):
-        return compact.upper()
-    return re.sub(
-        r"(\d+)([a-z])(\d+)",
-        lambda match: f"{match.group(1)}{match.group(2).upper()}{match.group(3)}",
-        compact,
-    )
 
 
 def _is_broken_fragment(value: str) -> bool:

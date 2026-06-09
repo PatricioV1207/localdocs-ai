@@ -59,6 +59,7 @@ localdocs-ai/
 ├── DECISIONS.md
 ├── LICENSE
 ├── requirements.txt
+├── requirements-embeddings.txt
 ├── app.py
 ├── AGENTS.md
 ├── evals/
@@ -72,6 +73,8 @@ localdocs-ai/
 │   ├── parser.py
 │   ├── chunker.py
 │   ├── indexer.py
+│   ├── embeddings.py
+│   ├── document_types.py
 │   ├── search.py
 │   ├── qa.py
 │   ├── concepts.py

@@ -9,6 +9,9 @@ def test_load_config_uses_defaults_when_missing(tmp_path):
     assert config.chunking.strategy == "word"
     assert config.search.top_k == 4
     assert config.search.minimum_score == 0.05
+    assert config.search.mode == "tfidf"
+    assert config.search.embedding_model.endswith("paraphrase-multilingual-MiniLM-L12-v2")
+    assert config.search.hybrid_semantic_weight == 0.5
     assert config.exports.export_dir == "exports"
     assert config.llm.use_openai_if_available is False
     assert config.study.max_flashcards == 10
@@ -30,6 +33,9 @@ chunk_overlap = 20
 [search]
 top_k = 6
 minimum_score = 0.1
+mode = "hybrid"
+embedding_model = "local/test-model"
+hybrid_semantic_weight = 0.7
 
 [exports]
 export_dir = "tmp_exports"
@@ -57,6 +63,9 @@ flashcards_file = "cards.tsv"
     assert config.chunking.strategy == "paragraph"
     assert config.search.top_k == 6
     assert config.search.minimum_score == 0.1
+    assert config.search.mode == "hybrid"
+    assert config.search.embedding_model == "local/test-model"
+    assert config.search.hybrid_semantic_weight == 0.7
     assert config.exports.export_dir == "tmp_exports"
     assert config.llm.use_openai_if_available is False
     assert config.study.max_flashcards == 7
@@ -78,6 +87,9 @@ chunk_overlap = -1
 [search]
 top_k = 0
 minimum_score = 2
+mode = "vector"
+embedding_model = ""
+hybrid_semantic_weight = -1
 
 [exports]
 export_dir = ""
@@ -105,6 +117,9 @@ flashcards_file = ""
     assert config.chunking.strategy == "word"
     assert config.search.top_k == 4
     assert config.search.minimum_score == 0.05
+    assert config.search.mode == "tfidf"
+    assert config.search.embedding_model.endswith("paraphrase-multilingual-MiniLM-L12-v2")
+    assert config.search.hybrid_semantic_weight == 0.5
     assert config.exports.export_dir == "exports"
     assert config.llm.use_openai_if_available is False
     assert config.study.max_flashcards == 10

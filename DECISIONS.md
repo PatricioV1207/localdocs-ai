@@ -88,3 +88,41 @@ the noisy sentence without discarding the technical one.
 and slows feedback without increasing confidence during a narrow iteration.
 The full profile remains unchanged in scope and is still the authoritative
 release gate.
+
+## 011 - Keep Semantic Retrieval Optional and In Memory
+
+**Decision:** Build TF-IDF for every document collection. When semantic or
+hybrid mode is requested, add normalized Sentence Transformers embeddings in
+memory. Any provider, model, shape, or query failure falls back to TF-IDF.
+
+**Reason:** v0.4 needs useful conceptual retrieval without making model
+installation mandatory or adding a vector database. Keeping the embedding
+provider behind a small protocol also makes retrieval deterministic in tests.
+
+## 012 - Evaluate Retrieval with Fake Embeddings
+
+**Decision:** Unit tests and quality fixtures inject fixed embedding vectors
+through the public indexing and search APIs.
+
+**Reason:** The release gate must verify semantic ranking, hybrid ranking, and
+fallback behavior without network access, model downloads, hardware variance,
+or nondeterministic model output.
+
+## 013 - Detect Structure Instead of Hardcoding Topics
+
+**Decision:** Detect broad document types and section roles with transparent
+English/Spanish structural markers. Rank concepts from headings, definitions,
+grammatical subjects, emphasized text, and identifiers rather than a list of
+domain phrases.
+
+**Reason:** Study tools should work for a research result, installation
+procedure, contract obligation, or academic objective without topic-specific
+code.
+
+## 014 - Keep Classification Heuristic and Explainable
+
+**Decision:** Document profiles contain the selected type and marker counts.
+Unmatched documents use the `generic` profile.
+
+**Reason:** The v0.4 foundation remains local, deterministic, inspectable, and
+easy for contributors to extend without a classifier model or remote service.

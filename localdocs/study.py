@@ -16,9 +16,9 @@ from localdocs.concepts import (
     extract_concepts,
     is_valid_generated_question,
     normalize_generated_question,
-    related_concept,
     spanish_concept_phrase,
 )
+from localdocs.document_types import detect_document_profiles, detect_section_role
 from localdocs.models import Citation, DocumentChunk, StudyQuestion
 
 
@@ -28,6 +28,7 @@ def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 1
     questions: list[StudyQuestion] = []
     seen_concepts: set[str] = set()
     ranked_chunks = informative_chunks(chunks)
+    profiles = detect_document_profiles(chunks)
     has_useful_chunks = any(not is_low_value_text(chunk.text) for chunk in ranked_chunks)
 
     for chunk in ranked_chunks:
@@ -44,7 +45,13 @@ def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 1
         if concept_id in seen_concepts:
             continue
 
-        question_text = _question_from_chunk(chunk, concept)
+        profile = profiles[chunk.file_path or chunk.file_name]
+        question_text = _question_from_chunk(
+            chunk,
+            concept,
+            profile.document_type,
+            detect_section_role(chunk.text),
+        )
         question_text = normalize_generated_question(question_text)
         if not question_text or not is_valid_generated_question(question_text):
             continue
@@ -82,11 +89,24 @@ def export_study_questions_markdown(
     return export_path
 
 
-def _question_from_chunk(chunk: DocumentChunk, concept: str) -> str:
+def _question_from_chunk(
+    chunk: DocumentChunk,
+    concept: str,
+    document_type: str,
+    section_role: str,
+) -> str:
     concept_context = concept_sentence(chunk.text, concept) or chunk.text
     if appears_spanish(chunk.text):
-        return _spanish_question(concept, concept_context)
+        return _spanish_question(concept, concept_context, document_type, section_role)
 
+    if document_type == "research_paper" and section_role == "result":
+        return f"What did the document find about {concept}?"
+    if document_type == "legal_business" and section_role == "obligation":
+        return f"What obligation applies to {concept}?"
+    if document_type == "academic_practice" and section_role in {"objective", "question"}:
+        return f"What should a learner understand about {concept}?"
+    if document_type == "technical_manual" and section_role == "procedure":
+        return f"How should {concept} be performed?"
     if _looks_like_process(concept_context):
         return f"Why is {concept} important?"
     if _looks_like_function(concept_context):
@@ -96,18 +116,26 @@ def _question_from_chunk(chunk: DocumentChunk, concept: str) -> str:
     return f'What is meant by "{concept}"?'
 
 
-def _spanish_question(concept: str, text: str) -> str:
+def _spanish_question(
+    concept: str,
+    text: str,
+    document_type: str,
+    section_role: str,
+) -> str:
     lower = text.lower()
     label = spanish_concept_phrase(concept)
     concept_lower = concept.lower()
 
+    if document_type == "research_paper" and section_role == "result":
+        return f"¿Qué encontró el documento sobre {label}?"
+    if document_type == "legal_business" and section_role == "obligation":
+        return f"¿Qué obligación se establece para {label}?"
+    if document_type == "academic_practice" and section_role in {"objective", "question"}:
+        return f"¿Qué debe comprender el estudiante sobre {label}?"
+    if document_type == "technical_manual" and section_role == "procedure":
+        return f"¿Cómo debe realizarse {label}?"
     if "se define como" in lower or "es una función" in lower or "consiste en" in lower:
         return f"¿Qué es {label}?"
-    if concept_lower.startswith("válvula "):
-        related = related_concept(text, concept)
-        if related:
-            return f"¿Cuál es la función de {label} en {spanish_concept_phrase(related)}?"
-        return f"¿Cuál es la función de {label}?"
     if "recom" in lower or "medida" in lower:
         return f"¿Qué medidas se recomiendan para {label}?"
     if any(term in lower for term in ["condición", "condiciones", "debe cumplirse", "deben cumplirse"]):
@@ -137,4 +165,4 @@ def _looks_like_recommendation(text: str) -> bool:
 
 
 def _is_function_concept(concept: str) -> bool:
-    return concept.startswith(("relé", "sensor", "circuito", "unidad de relés", "válvula"))
+    return False

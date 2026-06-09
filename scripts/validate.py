@@ -28,13 +28,17 @@ FAST_TESTS = (
 )
 
 AREA_TESTS = {
-    "core": ("tests/test_app.py", "tests/test_config.py"),
+    "core": (
+        "tests/test_app.py",
+        "tests/test_config.py",
+        "tests/test_document_types.py",
+    ),
     "parsing": (
         "tests/test_parser.py",
         "tests/test_chunker.py",
         "tests/test_cleaning.py",
     ),
-    "search": ("tests/test_search.py",),
+    "search": ("tests/test_search.py", "tests/test_semantic_search.py"),
     "qa": (
         "tests/test_qa.py",
         "tests/test_golden_spanish.py",
@@ -47,12 +51,14 @@ AREA_TESTS = {
     "study": (
         "tests/test_study.py",
         "tests/test_concepts.py",
+        "tests/test_document_types.py",
         "tests/test_golden_spanish.py",
         "tests/test_quality_v034.py",
     ),
     "flashcards": (
         "tests/test_flashcards.py",
         "tests/test_concepts.py",
+        "tests/test_document_types.py",
         "tests/test_golden_spanish.py",
         "tests/test_quality_v034.py",
     ),
@@ -83,12 +89,14 @@ AREA_FIXTURES = {
         "mixed_technical_with_noise",
         "noisy_pressure_monitoring",
         "spanish_pneumatic_safety",
+        "general_document_types",
     ),
     "flashcards": (
         "long_technical_sentence",
         "mixed_technical_with_noise",
         "noisy_pressure_monitoring",
         "spanish_pneumatic_safety",
+        "general_document_types",
     ),
     "quality": (
         "long_technical_sentence",
@@ -97,7 +105,10 @@ AREA_FIXTURES = {
         "noisy_pressure_monitoring",
         "spanish_pneumatic_safety",
         "unsupported_cross_chunk_relation",
+        "general_document_types",
     ),
+    "search": ("mixed_technical_with_noise",),
+    "core": ("general_document_types",),
 }
 
 

@@ -19,6 +19,19 @@
       "require_complete_sentences": true
     }
   ],
+  "semantic_search": [
+    {
+      "id": "semantic_synonym_retrieval",
+      "effective_mode": "semantic",
+      "result_chunks": [1]
+    },
+    {
+      "id": "semantic_index_fallback",
+      "effective_mode": "tfidf",
+      "result_chunks": [2],
+      "warning_contains": "using TF-IDF"
+    }
+  ],
   "study_questions": {
     "min_items": 1,
     "max_items": 1,

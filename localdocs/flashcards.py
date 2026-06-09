@@ -6,6 +6,7 @@ from pathlib import Path
 
 from localdocs.cleaning import (
     appears_spanish,
+    first_heading,
     informative_chunks,
     informative_terms,
     is_low_value_text,
@@ -18,9 +19,9 @@ from localdocs.concepts import (
     extract_concepts,
     is_valid_generated_question,
     normalize_generated_question,
-    related_concept,
     spanish_concept_phrase,
 )
+from localdocs.document_types import detect_document_profiles, detect_section_role
 from localdocs.models import Citation, DocumentChunk, Flashcard
 
 
@@ -39,6 +40,16 @@ FUNCTION_ANSWER_MARKERS = (
     "proporciona",
     "reduce",
     "se define como",
+    "allows",
+    "controls",
+    "creates",
+    "detects",
+    "ensures",
+    "generates",
+    "prevents",
+    "provides",
+    "requires",
+    "supports",
 )
 
 
@@ -48,6 +59,7 @@ def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 10) -> lis
     flashcards: list[Flashcard] = []
     seen_concepts: set[str] = set()
     ranked_chunks = informative_chunks(chunks)
+    profiles = detect_document_profiles(chunks)
     has_useful_chunks = any(not is_low_value_text(chunk.text) for chunk in ranked_chunks)
 
     for chunk in ranked_chunks:
@@ -56,7 +68,12 @@ def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 10) -> lis
         if has_useful_chunks and is_low_value_text(chunk.text):
             continue
 
-        question, answer = _card_from_chunk(chunk)
+        profile = profiles[chunk.file_path or chunk.file_name]
+        question, answer = _card_from_chunk(
+            chunk,
+            profile.document_type,
+            detect_section_role(chunk.text),
+        )
         question = normalize_generated_question(question)
         if not question or not answer or not is_valid_generated_question(question):
             continue
@@ -95,31 +112,64 @@ def export_anki_tsv(flashcards: list[Flashcard], path: str | Path = "exports/fla
     return export_path
 
 
-def _card_from_chunk(chunk: DocumentChunk) -> tuple[str, str]:
+def _card_from_chunk(
+    chunk: DocumentChunk,
+    document_type: str,
+    section_role: str,
+) -> tuple[str, str]:
     concepts = extract_concepts(chunk.text, limit=1)
     if not concepts:
         return "", ""
     concept = concepts[0]
     answer = concept_sentence(chunk.text, concept)
-    if not answer or not _answer_matches_concept(answer, concept):
+    heading_support = concept_key(first_heading(chunk.text)) == concept_key(concept)
+    if not answer or (
+        not _answer_matches_concept(answer, concept)
+        and not (heading_support and is_quality_sentence(answer))
+    ):
         return "", ""
 
     if appears_spanish(chunk.text):
-        question = _spanish_card_question(chunk.text, concept, answer)
+        question = _spanish_card_question(
+            concept,
+            answer,
+            document_type,
+            section_role,
+        )
     else:
-        question = f"What is a key point about {concept}?"
+        question = _english_card_question(concept, document_type, section_role)
     if "función" in question.lower() and not _has_function_evidence(answer):
         return "", ""
     return question, truncate_at_clause(answer, 280)
 
 
-def _spanish_card_question(text: str, concept: str, answer: str) -> str:
+def _english_card_question(concept: str, document_type: str, section_role: str) -> str:
+    if document_type == "research_paper" and section_role == "result":
+        return f"What result is reported about {concept}?"
+    if document_type == "legal_business" and section_role == "obligation":
+        return f"What requirement applies to {concept}?"
+    if document_type == "academic_practice" and section_role in {"objective", "question"}:
+        return f"What should be understood about {concept}?"
+    if document_type == "technical_manual" and section_role == "procedure":
+        return f"What procedure is specified for {concept}?"
+    return f"What is a key point about {concept}?"
+
+
+def _spanish_card_question(
+    concept: str,
+    answer: str,
+    document_type: str,
+    section_role: str,
+) -> str:
     label = spanish_concept_phrase(concept)
-    if concept.lower().startswith("válvula "):
-        related = related_concept(text, concept)
-        if related:
-            return f"¿Qué función cumple {label} en {spanish_concept_phrase(related)}?"
-        return f"¿Qué función cumple {label}?"
+    if document_type == "research_paper" and section_role == "result":
+        return f"¿Qué resultado se informa sobre {label}?"
+    if document_type == "legal_business" and section_role == "obligation":
+        return f"¿Qué requisito se establece para {label}?"
+    if document_type == "academic_practice" and section_role in {"objective", "question"}:
+        return f"¿Qué debe comprenderse sobre {label}?"
+    if document_type == "technical_manual" and section_role == "procedure":
+        return f"¿Qué procedimiento se indica para {label}?"
     if "se define como" in answer.lower() or "es una función" in answer.lower() or "consiste en" in answer.lower():
         return f"¿Qué es {label}?"
     if _has_function_evidence(answer):

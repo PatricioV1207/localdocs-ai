@@ -22,5 +22,30 @@
         "2": 0.97
       }
     }
+  ],
+  "semantic_cases": [
+    {
+      "id": "semantic_synonym_retrieval",
+      "mode": "semantic",
+      "query": "¿Qué componente detiene el aire ante peligro?",
+      "document_vectors": [
+        [1.0, 0.0],
+        [0.0, 1.0]
+      ],
+      "query_vector": [1.0, 0.0],
+      "top_k": 1
+    },
+    {
+      "id": "semantic_index_fallback",
+      "mode": "semantic",
+      "query": "productos smc",
+      "document_vectors": [
+        [1.0, 0.0],
+        [0.0, 1.0]
+      ],
+      "query_vector": [0.0, 1.0],
+      "fail_document_encoding": true,
+      "top_k": 1
+    }
   ]
 }

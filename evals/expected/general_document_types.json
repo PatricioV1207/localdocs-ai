@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "qa": [],
+  "document_types": {
+    "practice.md": "academic_practice",
+    "manual.md": "technical_manual",
+    "paper.md": "research_paper",
+    "agreement.md": "legal_business",
+    "garden.md": "generic"
+  },
+  "study_questions": {
+    "min_items": 5,
+    "max_items": 5,
+    "citation_chunks": [1, 2, 3, 4, 5],
+    "must_include": [
+      "learner understand",
+      "How should",
+      "document find",
+      "obligation applies",
+      "Community Garden"
+    ],
+    "must_not_include": [
+      "pneumatic",
+      "pressure",
+      "valve"
+    ]
+  },
+  "flashcards": {
+    "min_items": 5,
+    "max_items": 5,
+    "citation_chunks": [1, 2, 3, 4, 5],
+    "must_include": [
+      "understood about",
+      "procedure is specified",
+      "result is reported",
+      "requirement applies",
+      "Community Garden"
+    ],
+    "must_not_include": [
+      "pneumatic",
+      "pressure",
+      "valve"
+    ]
+  },
+  "source_quality": {
+    "low_value_chunks": [],
+    "technical_chunks": [1, 2, 3, 4, 5],
+    "forbidden_citation_chunks": []
+  }
+}

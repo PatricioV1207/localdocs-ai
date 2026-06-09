@@ -1,6 +1,6 @@
 # LocalDocs AI Demo
 
-This walkthrough presents the current v0.3.5 MVP in about three minutes using
+This walkthrough presents the current v0.4.0 MVP in about three minutes using
 only repository sample documents.
 
 ## Before Presenting
@@ -49,8 +49,9 @@ Use a clean browser window and leave **Use OpenAI if available** unchecked.
 
 6. **Close with scope**
 
-   v0.3.5 is intentionally an MVP: no accounts, cloud sync, OCR, vector
-   database, or multi-user system.
+   v0.4.0 is intentionally an MVP: no accounts, cloud sync, OCR, vector
+   database, or multi-user system. Semantic search is optional, in memory, and
+   falls back to TF-IDF.
 
 ## Presenter Checks
 

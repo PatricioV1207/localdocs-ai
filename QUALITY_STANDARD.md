@@ -1,9 +1,8 @@
 # LocalDocs AI Quality Standard
 
 This document defines the deterministic quality gate for local document outputs.
-It applies to local extractive QA, summaries, study questions, flashcards, and
-source selection. The gate is intentionally small and strict: every checked
-expectation must pass.
+It applies to local extractive QA, summaries, study questions, flashcards,
+document-type detection, retrieval, and source selection.
 
 ## Principles
 
@@ -19,7 +18,7 @@ expectation must pass.
 5. **Conservative:** Returning fewer high-quality items is better than filling a
    requested limit with weak content.
 6. **Local and deterministic:** Quality evaluations run without an OpenAI API key,
-   network access, OCR, embeddings, or nondeterministic model output.
+   network access, OCR, model downloads, or nondeterministic model output.
 
 ## Hard Gates
 
@@ -72,6 +71,27 @@ expectation must pass.
 - QA, study questions, and flashcards must not cite forbidden chunks when
   permitted technical evidence exists.
 
+### Semantic Search
+
+- Semantic retrieval can find fixture-defined conceptual matches without
+  requiring lexical overlap.
+- Hybrid retrieval combines normalized semantic similarity with TF-IDF using
+  the configured weight.
+- Missing, invalid, or failed document embeddings fall back to TF-IDF.
+- Query-embedding failures fall back to TF-IDF for that search.
+- Deterministic fixtures use fake vectors and never download a model.
+
+### General Document Intelligence
+
+- Academic practice, technical manuals, research papers, legal/business
+  documents, and generic documents are detected from reusable structural
+  markers rather than topic vocabularies.
+- Question and flashcard templates respond to section roles such as objective,
+  procedure, result, obligation, definition, question, and example.
+- General fixtures span unrelated topics and must not require a specific
+  subject-matter phrase to pass.
+- Generated items remain extractive and cite the supporting chunk.
+
 ### UI State
 
 - Processing a new document collection clears outputs derived from the previous
@@ -86,8 +106,9 @@ expectation must pass.
 - `evals/expected/*.json` contains the assertions for the matching fixture.
 - Fixture and expected files share the same filename and schema version.
 
-The fixtures contain no private documents. They are compact simulations of the
-Spanish pneumatic-safety material that exposed prior quality regressions.
+The fixtures contain no private documents. They include compact regression
+cases, deterministic vectors, and unrelated general examples covering the five
+supported document types.
 
 ## Commands
 

@@ -19,6 +19,7 @@ def test_quality_eval_report_passes_all_bundled_fixtures():
         "flashcards",
         "source quality",
     }
+    assert any(result.area.startswith("semantic search:") for result in report.results)
 
 
 def test_quality_eval_cli_returns_success_and_summary():

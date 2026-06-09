@@ -6,11 +6,27 @@
 
 - Fast, focused, and full validation profiles through `scripts/validate.py`.
 - Concise `--quiet` output for successful deterministic quality evaluations.
+- Optional local embeddings through Sentence Transformers.
+- Semantic and hybrid TF-IDF plus semantic retrieval modes.
+- Search-mode, embedding-model, and hybrid-weight configuration and UI controls.
+- Deterministic semantic retrieval tests and quality fixtures using fake vectors.
+- Document-type detection for academic practice, technical manuals, research
+  papers, legal/business material, and generic documents.
+- Reusable section-role detection and multidomain quality fixtures.
 
 ### Improved
 
 - Contributor and Codex guidance now reserves the full gate for commit,
   release, and final handoff while using smaller checks during iteration.
+- Semantic indexing and query failures now fall back cleanly to TF-IDF.
+- Study questions and flashcards now choose templates from document structure
+  instead of topic-specific phrase lists.
+- Extractive QA no longer adds unrelated evidence merely to fill an answer.
+
+### Not Included
+
+- No LangChain, Chroma, FAISS, OCR, authentication, cloud sync, or persistent
+  vector database.
 
 ## v0.3.5 - 2026-06-09
 

@@ -59,12 +59,14 @@
     ]
   },
   "flashcards": {
-    "min_items": 1,
-    "max_items": 1,
+    "min_items": 2,
+    "max_items": 2,
     "citation_chunks": [
+      1,
       2
     ],
     "must_include": [
+      "iso 12100",
       "presión de servicio",
       "6 bar"
     ],

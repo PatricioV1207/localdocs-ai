@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "name": "General document structures across unrelated domains",
+  "chunks": [
+    {
+      "chunk_index": 1,
+      "file_name": "practice.md",
+      "file_type": "markdown",
+      "text": "# Learning Objectives\nStudents will compare evaporation and condensation. Exercise: explain how the processes differ."
+    },
+    {
+      "chunk_index": 2,
+      "file_name": "manual.md",
+      "file_type": "markdown",
+      "text": "# Installation Procedure\nBefore installation, close the water supply. Step 1: attach the filter housing to the bracket."
+    },
+    {
+      "chunk_index": 3,
+      "file_name": "paper.md",
+      "file_type": "markdown",
+      "text": "# Spaced Recall Outcomes\nMethods used two participant groups. Results showed that spaced recall increased retention after one week."
+    },
+    {
+      "chunk_index": 4,
+      "file_name": "agreement.md",
+      "file_type": "markdown",
+      "text": "# Service Agreement\nThe supplier shall retain audit records for five years. The agreement has an effective date of July 1."
+    },
+    {
+      "chunk_index": 5,
+      "file_name": "garden.md",
+      "file_type": "markdown",
+      "text": "# Community Garden\nThe community garden combines shared planting plots with weekly planning meetings."
+    }
+  ],
+  "qa_cases": []
+}
