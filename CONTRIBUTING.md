@@ -1,6 +1,15 @@
 # Contributing to LocalDocs AI
 
-Thanks for helping make LocalDocs AI better. This project is local-first, beginner-friendly, and intentionally small.
+Thanks for helping make LocalDocs AI better. This project is local-first,
+beginner-friendly, and intentionally small.
+
+## Before You Start
+
+- Search existing issues before opening a new one.
+- Use synthetic or public sample text in bug reports and tests.
+- Open an issue before investing in a large change or anything outside the
+  current MVP scope.
+- Keep pull requests focused enough to review in one sitting.
 
 ## Project Principles
 
@@ -33,13 +42,19 @@ streamlit run app.py
 Run tests:
 
 ```bash
-pytest
+OPENAI_API_KEY="" python -m pytest
 ```
 
-If `pytest` is not on your shell path:
+Compile all Python modules:
 
 ```bash
-python -m pytest
+python -m compileall -q app.py localdocs tests scripts
+```
+
+Run deterministic quality evaluations:
+
+```bash
+OPENAI_API_KEY="" python scripts/run_quality_eval.py
 ```
 
 ## Good First Contributions
@@ -49,18 +64,53 @@ python -m pytest
 - Improve error messages.
 - Make small UI polish changes that keep the app simple.
 - Fix bugs in existing v0.1-v0.3 behavior.
+- Add a deterministic fixture for a reproducible quality regression.
 
 ## Scope Boundaries
 
-Please do not add major future-scope features without discussion. Current out-of-scope examples include vector databases, local embeddings, OCR, authentication, cloud sync, desktop packaging, mobile apps, multi-user collaboration, and plugin systems.
+Please do not add major future-scope features without discussion. Current
+out-of-scope examples include vector databases, local embeddings, OCR,
+authentication, cloud sync, desktop packaging, mobile apps, multi-user
+collaboration, and plugin systems.
+
+## Development Workflow
+
+1. Create a focused branch.
+2. Add or update a test that demonstrates the intended behavior.
+3. Implement the smallest clear change.
+4. For QA, summaries, cleaning, study tools, or source selection, add or update
+   a matching fixture under `evals/fixtures/` and `evals/expected/`.
+5. Run all validation commands.
+6. Update `CHANGELOG.md` when behavior visible to users changes.
+7. Open a pull request using the repository template.
+
+## Code and Documentation Style
+
+- Prefer readable functions and established module boundaries.
+- Keep local behavior deterministic when possible.
+- Do not expose raw API, billing, authentication, or quota payloads to users.
+- Preserve source citations and weak-evidence behavior.
+- Do not commit `.env`, generated exports, caches, private documents, or
+  screenshots containing personal data.
+- Use repository sample documents for demos and documentation.
 
 ## Pull Request Checklist
 
 - Keep the change focused.
 - Add or update tests when behavior changes.
-- Run `pytest` before opening the PR.
-- Update `README.md`, `docs/architecture.md`, `docs/roadmap.md`, or `CHANGELOG.md` when user-facing behavior changes.
+- Run pytest, compileall, and the deterministic quality evaluation.
+- Update `README.md`, `RELEASE_NOTES.md`, or `CHANGELOG.md` when user-facing
+  behavior changes.
 - Avoid committing generated exports, local virtual environments, caches, or secrets.
+- Confirm that the app still works without `OPENAI_API_KEY`.
+
+## Quality Fixtures
+
+Quality fixtures contain synthetic chunks only. Each file under
+`evals/fixtures/` must have a matching filename under `evals/expected/`.
+
+Do not weaken an expected result merely to make a regression pass. If an
+expectation changes intentionally, explain why in `DECISIONS.md`.
 
 ## Reporting Bugs
 
@@ -73,3 +123,6 @@ Use the bug report issue template. Include:
 - Any safe-to-share error message.
 
 Do not upload private documents or API keys in issues.
+
+For security-sensitive problems, follow [SECURITY.md](SECURITY.md) instead of
+opening a public bug report.

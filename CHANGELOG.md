@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## v0.3.5 - 2026-06-09
+
 ### Added
 
 - Deterministic regression fixture for unsupported cross-chunk relationships.
@@ -13,6 +17,8 @@
 - GitHub Actions test workflow.
 - Screenshot placeholder documentation.
 - Deterministic quality standards, fixtures, expected results, and evaluation runner.
+- Presentation-ready demo guide, release notes, repository badges, and
+  versionable screenshot placeholders.
 
 ### Improved
 
@@ -28,6 +34,8 @@
 - Roadmap clarity for v0.4 plans.
 - Ignore rules for local caches, build artifacts, secrets, and generated exports.
 - CI quality gates for QA, study questions, flashcards, and source selection.
+- Open-source contribution, security, issue, and pull request guidance aligned
+  with the current validation workflow.
 
 ## v0.3.4
 

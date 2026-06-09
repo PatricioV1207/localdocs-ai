@@ -11,6 +11,7 @@
 - Spanish study questions no longer confuse the verb `funciona` with the noun
   `función`.
 - The evaluation command is integrated into GitHub Actions.
+- Open-source presentation materials are aligned with the v0.3.5 MVP.
 
 ## Completed
 
@@ -35,6 +36,12 @@
 - Added automated tests for the quality runner.
 - Added a regression fixture for unsupported cross-chunk relationships.
 - Documented the contributor workflow in `AGENTS.md` and `README.md`.
+- Reworked `README.md` around local-first value, reproducible setup, a
+  60-second demo, project badges, current scope, and contributor entry points.
+- Added versionable screenshot placeholders under `assets/screenshots/`.
+- Added `DEMO.md` and `RELEASE_NOTES.md`.
+- Expanded `CONTRIBUTING.md`, `SECURITY.md`, issue templates, and the pull
+  request template to match the current quality gates and privacy rules.
 
 ## Validation Checklist
 
@@ -44,6 +51,11 @@
 - [x] GitHub Actions Python 3.11/3.12 matrix configured to run all gates
 - [x] Streamlit smoke test - sample documents processed and cited local answer
   rendered without browser console errors
+- [x] Presentation demo - processed 2 sample documents, returned the documented
+  TF-IDF answer and citation, then generated summaries, flashcards, and study
+  questions without browser warnings or errors
+- [x] Documentation audit - internal Markdown links resolve, both screenshot
+  SVG placeholders parse, and GitHub templates contain current validation steps
 
 Update this checklist with the latest verified state when quality behavior or
 fixtures change.
