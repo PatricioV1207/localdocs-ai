@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from localdocs.cleaning import (
@@ -113,7 +114,7 @@ def _spanish_question(concept: str, text: str) -> str:
         return f"¿Qué condiciones deben cumplirse para {label}?"
     if any(term in lower for term in ["reduce el riesgo", "reducir el riesgo", "evita el riesgo", "previene el riesgo"]):
         return f"¿Qué riesgo ayuda a reducir {label}?"
-    if "función" in lower or "funcion" in lower or _is_function_concept(concept_lower):
+    if re.search(r"\bfunci[oó]n\b", lower) or _is_function_concept(concept_lower):
         return f"¿Cuál es la función de {label}?"
     if "importante" in lower or "importancia" in lower or concept_lower.startswith(("iso ", "evaluación", "reducción")):
         return f"¿Por qué es importante {label}?"

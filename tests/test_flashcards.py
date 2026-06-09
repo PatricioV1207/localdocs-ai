@@ -104,3 +104,26 @@ def test_generate_flashcards_rejects_weak_terms_and_deduplicates_concepts():
     assert cards[0].citation.file_name == "manual_es.pdf"
     assert cards[0].citation.chunk_index in {2, 3}
     assert "Festo" not in cards[0].question
+
+
+def test_flashcard_long_answer_ends_at_complete_clause():
+    chunk = DocumentChunk(
+        text=(
+            "# Monitorización de presión segura\n"
+            "La monitorización de presión segura controla la presión del circuito, "
+            "detecta condiciones peligrosas antes del movimiento, bloquea el actuador "
+            "cuando el valor supera el límite configurado, registra el estado para el "
+            "diagnóstico técnico y mantiene la máquina detenida hasta que una persona "
+            "autorizada completa el procedimiento de restablecimiento seguro."
+        ),
+        file_name="manual.pdf",
+        file_path="manual.pdf",
+        file_type="pdf",
+        chunk_index=1,
+    )
+
+    card = generate_flashcards([chunk], max_cards=1)[0]
+
+    assert card.answer.endswith(".")
+    assert "..." not in card.answer
+    assert len(card.answer) <= 280

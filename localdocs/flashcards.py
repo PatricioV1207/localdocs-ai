@@ -10,6 +10,7 @@ from localdocs.cleaning import (
     informative_terms,
     is_low_value_text,
     is_quality_sentence,
+    truncate_at_clause,
 )
 from localdocs.concepts import (
     concept_key,
@@ -109,7 +110,7 @@ def _card_from_chunk(chunk: DocumentChunk) -> tuple[str, str]:
         question = f"What is a key point about {concept}?"
     if "función" in question.lower() and not _has_function_evidence(answer):
         return "", ""
-    return question, _truncate(answer, 280)
+    return question, truncate_at_clause(answer, 280)
 
 
 def _spanish_card_question(text: str, concept: str, answer: str) -> str:
@@ -148,13 +149,6 @@ def _answer_matches_concept(answer: str, concept: str) -> bool:
 def _has_function_evidence(answer: str) -> bool:
     lower = answer.lower()
     return any(marker in lower for marker in FUNCTION_ANSWER_MARKERS)
-
-
-def _truncate(text: str, max_chars: int) -> str:
-    compact = " ".join(text.split())
-    if len(compact) <= max_chars:
-        return compact
-    return compact[: max_chars - 3].rstrip() + "..."
 
 
 def _clean_tsv_field(value: str) -> str:

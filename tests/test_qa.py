@@ -128,3 +128,76 @@ def test_openai_can_be_disabled_even_when_environment_key_exists(monkeypatch):
 
     assert answer.used_llm is False
     assert answer.note == ""
+
+
+def test_extractive_qa_does_not_invent_relation_between_separate_facts(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    standard = DocumentChunk(
+        text="La norma ISO 12100 exige realizar una evaluación de riesgos.",
+        file_name="manual.pdf",
+        file_path="manual.pdf",
+        file_type="pdf",
+        chunk_index=1,
+    )
+    pressure = DocumentChunk(
+        text="El circuito neumático funciona con una presión de servicio de 6 bar.",
+        file_name="manual.pdf",
+        file_path="manual.pdf",
+        file_type="pdf",
+        chunk_index=2,
+    )
+
+    answer = answer_question(
+        "¿Qué presión exige la norma ISO 12100?",
+        [
+            SearchResult(chunk=standard, score=0.9),
+            SearchResult(chunk=pressure, score=0.8),
+        ],
+        use_openai=False,
+    )
+
+    assert answer.enough_evidence is False
+    assert answer.answer == WEAK_EVIDENCE_MESSAGE
+    assert answer.citations == []
+
+
+def test_extractive_qa_accepts_supported_single_sentence_relation(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    chunk = DocumentChunk(
+        text="El circuito neumático funciona con una presión de servicio de 6 bar.",
+        file_name="manual.pdf",
+        file_path="manual.pdf",
+        file_type="pdf",
+        chunk_index=2,
+    )
+
+    answer = answer_question(
+        "¿Cuál es la presión de servicio del circuito neumático?",
+        [SearchResult(chunk=chunk, score=0.9)],
+        use_openai=False,
+    )
+
+    assert answer.enough_evidence is True
+    assert "6 bar" in answer.answer
+    assert [citation.chunk_index for citation in answer.citations] == [2]
+
+
+def test_extractive_qa_requires_requested_qualifier(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    chunk = DocumentChunk(
+        text="El circuito tiene un sensor de presión que detecta condiciones inseguras.",
+        file_name="manual.pdf",
+        file_path="manual.pdf",
+        file_type="pdf",
+        chunk_index=1,
+    )
+
+    answer = answer_question(
+        "¿Qué presión máxima tiene el circuito?",
+        [SearchResult(chunk=chunk, score=0.9)],
+        use_openai=False,
+    )
+
+    assert answer.enough_evidence is False
+    assert answer.answer == WEAK_EVIDENCE_MESSAGE
+    assert answer.citations == []

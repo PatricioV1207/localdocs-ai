@@ -6,7 +6,7 @@ LocalDocs AI is an open-source, local-first document intelligence app. Its goal 
 
 ## Main instruction
 
-Build a functional v0.1 MVP, not a final product.
+Maintain a functional local-first MVP, not a final product.
 
 Do not over-engineer the project. Do not build advanced features unless they are explicitly requested. Focus on a clean, working, testable first version.
 
@@ -54,14 +54,18 @@ Use this structure unless there is a strong reason to improve it:
 ```txt
 localdocs-ai/
 ├── README.md
+├── QUALITY_STANDARD.md
+├── PROGRESS.md
+├── DECISIONS.md
 ├── LICENSE
 ├── requirements.txt
 ├── app.py
 ├── AGENTS.md
-├── docs/
-│   ├── goal.md
-│   ├── architecture.md
-│   └── roadmap.md
+├── evals/
+│   ├── fixtures/
+│   └── expected/
+├── scripts/
+│   └── run_quality_eval.py
 ├── localdocs/
 │   ├── __init__.py
 │   ├── parser.py
@@ -69,6 +73,10 @@ localdocs-ai/
 │   ├── indexer.py
 │   ├── search.py
 │   ├── qa.py
+│   ├── concepts.py
+│   ├── cleaning.py
+│   ├── flashcards.py
+│   ├── study.py
 │   ├── summarizer.py
 │   ├── export.py
 │   └── models.py
@@ -92,6 +100,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pytest
+python scripts/run_quality_eval.py
 streamlit run app.py
 ```
 
@@ -101,7 +110,7 @@ On Windows, document the alternative activation command:
 .venv\Scripts\activate
 ```
 
-## Definition of done for v0.1
+## Definition of done
 
 The MVP is complete only when:
 
@@ -115,14 +124,46 @@ The MVP is complete only when:
 - The user can generate summaries.
 - The user can export summaries and Q&A results to Markdown.
 - Tests exist and pass.
+- The deterministic quality evaluation passes.
 - README.md explains installation and usage.
 - The project has a clear roadmap.
+
+## Quality evaluation
+
+`QUALITY_STANDARD.md` is the source of truth for QA, summary, study-question,
+flashcard, UI-state, and source-selection quality.
+
+Quality artifacts:
+
+- `QUALITY_STANDARD.md`: hard gates and contributor workflow.
+- `PROGRESS.md`: current quality-evaluation status.
+- `DECISIONS.md`: durable decisions about evaluation design.
+- `evals/fixtures/*.json`: synthetic document inputs.
+- `evals/expected/*.json`: expected behavior for matching fixtures.
+- `scripts/run_quality_eval.py`: deterministic local and CI runner.
+
+When changing QA, summaries, cleaning, concept extraction, study questions,
+flashcards, UI document state, or source ranking:
+
+1. Preserve source grounding and citations.
+2. Add or update the smallest relevant fixture and expected file.
+3. Record intentional evaluation-policy changes in `DECISIONS.md`.
+4. Run:
+
+```bash
+python -m pytest
+python -m compileall app.py localdocs tests scripts
+python scripts/run_quality_eval.py
+```
+
+Do not weaken an expected result merely to make a regression pass. Prefer fewer
+high-quality study items over forcing the configured maximum.
 
 ## Behavior expectations
 
 Before making major architectural changes, prefer the simplest implementation that satisfies the MVP.
 
-When something is uncertain, make a reasonable implementation decision and document it in the README or docs.
+When something is uncertain, make a reasonable implementation decision and document it in `README.md` or `DECISIONS.md`.
 
 Do not stop to ask for clarification unless the task is impossible without it.
 

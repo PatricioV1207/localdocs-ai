@@ -35,3 +35,11 @@ jobs:
         env:
           OPENAI_API_KEY: ""
         run: python -m pytest
+
+      - name: Compile Python modules
+        run: python -m compileall -q app.py localdocs tests scripts
+
+      - name: Run quality evaluations
+        env:
+          OPENAI_API_KEY: ""
+        run: python scripts/run_quality_eval.py

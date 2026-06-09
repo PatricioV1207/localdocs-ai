@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import os
 import re
-
 from localdocs.cleaning import (
+    CONCEPT_BOUNDARIES,
     appears_spanish,
     chunk_quality_score,
     informative_terms,
@@ -15,6 +15,7 @@ from localdocs.cleaning import (
     is_valid_question,
     sentence_quality_score,
     split_sentences,
+    truncate_at_clause,
 )
 from localdocs.concepts import concept_key, extract_concepts
 from localdocs.models import Answer, Citation, SearchResult
@@ -22,6 +23,20 @@ from localdocs.models import Answer, Citation, SearchResult
 MIN_EVIDENCE_SCORE = 0.05
 WEAK_EVIDENCE_MESSAGE = "I could not find enough strong evidence in the documents."
 OPENAI_FALLBACK_NOTE = "OpenAI generation is unavailable, so LocalDocs used local extractive mode."
+
+QUESTION_SCAFFOLD_TERMS = {
+    "about",
+    "does",
+    "how",
+    "improve",
+    "improves",
+    "mejora",
+    "mejoran",
+    "norma",
+    "standard",
+    "what",
+    "which",
+}
 
 
 def answer_question(
@@ -175,10 +190,10 @@ def _extractive_answer(
         for sentence, result in selected
         if _answer_sentence_is_usable(sentence)
     ]
-    if not selected:
+    if not selected or not _evidence_supports_question(question, selected):
         return WEAK_EVIDENCE_MESSAGE, []
 
-    sentences = [_truncate(sentence, 360) for sentence, _result in selected]
+    sentences = [truncate_at_clause(sentence, 360) for sentence, _result in selected]
     used_results = _unique_results([result for _sentence, result in selected])
     spanish = appears_spanish(question) or appears_spanish(" ".join(sentences))
 
@@ -300,6 +315,45 @@ def _answer_sentence_is_usable(sentence: str) -> bool:
     return is_quality_sentence(compact) and compact.endswith((".", "?", "!"))
 
 
+def _evidence_supports_question(
+    question: str,
+    selected: list[tuple[str, SearchResult]],
+) -> bool:
+    """Reject answers that join facts without supporting the requested relation."""
+
+    question_terms = informative_terms(question) - CONCEPT_BOUNDARIES - QUESTION_SCAFFOLD_TERMS
+    if not question_terms:
+        return True
+
+    sentence_term_sets = [
+        _expanded_evidence_terms(sentence)
+        for sentence, _result in selected
+    ]
+    combined_terms = set().union(*sentence_term_sets)
+    required_overlap = len(question_terms)
+    if len(question_terms & combined_terms) < required_overlap:
+        return False
+
+    asks_for_independent_items = bool(
+        re.search(r"\b(?:and|y|e)\b", question, flags=re.IGNORECASE)
+    )
+    if asks_for_independent_items or len(question_terms) == 1:
+        return True
+
+    return any(
+        len(question_terms & sentence_terms) >= required_overlap
+        for sentence_terms in sentence_term_sets
+    )
+
+
+def _expanded_evidence_terms(sentence: str) -> set[str]:
+    terms = informative_terms(sentence)
+    lower = sentence.lower()
+    if re.search(r"\b(?:safe|unsafe|safety)\b", lower):
+        terms.add("safety")
+    return terms
+
+
 def _unique_results(results: list[SearchResult]) -> list[SearchResult]:
     unique: list[SearchResult] = []
     seen: set[tuple[str, int, int | None]] = set()
@@ -331,10 +385,3 @@ def _unique_citations(results: list[SearchResult]) -> list[Citation]:
         seen.add(key)
         citations.append(citation)
     return citations
-
-
-def _truncate(text: str, max_chars: int) -> str:
-    compact = " ".join(text.split())
-    if len(compact) <= max_chars:
-        return compact
-    return compact[: max_chars - 3].rstrip() + "..."

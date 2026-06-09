@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "name": "Long technical sentence requiring complete-clause output",
+  "chunks": [
+    {
+      "chunk_index": 1,
+      "page_number": 11,
+      "text": "# Monitorización de presión segura\nLa monitorización de presión segura controla la presión del circuito, detecta condiciones peligrosas antes del movimiento, bloquea el actuador cuando el valor supera el límite configurado, registra el estado para el diagnóstico técnico y mantiene la máquina detenida hasta que una persona autorizada completa el procedimiento de restablecimiento seguro."
+    }
+  ],
+  "qa_cases": [
+    {
+      "id": "long_pressure_monitoring_function",
+      "question": "¿Cuál es la función de la monitorización de presión segura?",
+      "scores": {
+        "1": 0.92
+      }
+    }
+  ]
+}

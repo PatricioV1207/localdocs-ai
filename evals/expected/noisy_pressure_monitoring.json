@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "qa": [
+    {
+      "id": "pressure_monitoring_function",
+      "enough_evidence": true,
+      "must_include": [
+        "monitorización de presión segura",
+        "controla",
+        "bloquea"
+      ],
+      "must_not_include": [
+        "productos smc",
+        "expertise",
+        "información legal",
+        "índice"
+      ],
+      "citation_chunks": [3],
+      "require_complete_sentences": true
+    },
+    {
+      "id": "legal_only_weak_evidence",
+      "enough_evidence": false,
+      "must_include": ["could not find enough strong evidence"],
+      "must_not_include": [
+        "productos smc",
+        "información legal",
+        "índice"
+      ],
+      "citation_chunks": [],
+      "require_complete_sentences": true
+    }
+  ],
+  "study_questions": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [3],
+    "must_include": ["monitorización de presión segura"],
+    "must_not_include": ["productos smc", "expertise", "índice"]
+  },
+  "flashcards": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [3],
+    "must_include": ["monitorización de presión segura", "controla", "bloquea"],
+    "must_not_include": ["productos smc", "expertise", "índice"]
+  },
+  "source_quality": {
+    "low_value_chunks": [1, 2, 4],
+    "technical_chunks": [3],
+    "forbidden_citation_chunks": [1, 2, 4]
+  }
+}

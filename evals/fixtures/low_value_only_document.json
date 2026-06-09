@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "name": "Document containing only front matter and commercial noise",
+  "chunks": [
+    {
+      "chunk_index": 1,
+      "page_number": 1,
+      "text": "Información legal y condiciones marco. Copyright 2026. Todos los derechos reservados."
+    },
+    {
+      "chunk_index": 2,
+      "page_number": 2,
+      "text": "Índice. Seguridad neumática ........ 7. Productos ........ 18. Contacto ........ 22."
+    },
+    {
+      "chunk_index": 3,
+      "page_number": 3,
+      "text": "Productos SMC y componentes adecuados para su aplicación. Expertise – Passion – Automation."
+    }
+  ],
+  "qa_cases": []
+}

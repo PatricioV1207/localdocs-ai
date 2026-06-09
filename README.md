@@ -29,6 +29,7 @@ The app works without an OpenAI API key. OpenAI generation is disabled by defaul
 - Export an Obsidian-friendly Markdown vault.
 - Export Anki-compatible flashcards as TSV.
 - Configure behavior with `localdocs_config.toml`.
+- Run deterministic quality evaluations for QA, study tools, and source selection.
 
 ## Not Included
 
@@ -193,7 +194,42 @@ The equivalent direct command remains available when your shell is configured fo
 pytest
 ```
 
-GitHub Actions runs `python -m pytest` on Python 3.11 and 3.12 for pushes and pull requests. It does not require `OPENAI_API_KEY`.
+Run the deterministic quality gate:
+
+```bash
+python scripts/run_quality_eval.py
+```
+
+Compile all Python modules:
+
+```bash
+python -m compileall app.py localdocs tests scripts
+```
+
+GitHub Actions runs pytest, compileall, and the deterministic quality gate on
+Python 3.11 and 3.12 for pushes and pull requests. It does not require
+`OPENAI_API_KEY`.
+
+## Quality Evaluation
+
+[QUALITY_STANDARD.md](QUALITY_STANDARD.md) defines the hard gates for local QA,
+summaries, study questions, flashcards, UI state, and source quality. The
+evaluation system uses synthetic JSON chunks, so it does not require private
+PDFs, network access, or an OpenAI API key.
+
+```txt
+evals/
+├── fixtures/
+└── expected/
+```
+
+Each fixture has a matching expected file. The runner checks grounding,
+citations, required concepts, forbidden fragments, grammatical questions,
+complete QA sentences, summary evidence, flashcard answer relevance, and
+rejection of legal, index, contact, product, marketing, and broken-OCR sources.
+
+See [PROGRESS.md](PROGRESS.md) for current status and
+[DECISIONS.md](DECISIONS.md) for design decisions.
 
 ## Project Structure
 
@@ -217,8 +253,16 @@ localdocs-ai/
 │   ├── study.py
 │   ├── obsidian.py
 │   └── config.py
+├── evals/
+│   ├── fixtures/
+│   └── expected/
+├── scripts/
+│   └── run_quality_eval.py
 ├── sample_docs/
 ├── tests/
+├── QUALITY_STANDARD.md
+├── PROGRESS.md
+├── DECISIONS.md
 ├── app.py
 ├── localdocs_config.toml
 ├── CONTRIBUTING.md

@@ -233,9 +233,7 @@ def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> 
         return
 
     if not blocks:
-        st.session_state.chunks = []
-        st.session_state.document_names = []
-        st.session_state.index = None
+        _clear_document_state(st.session_state)
         st.warning("No text was found in the selected documents.")
         return
 
@@ -248,12 +246,7 @@ def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> 
     st.session_state.chunks = chunks
     st.session_state.document_names = sorted({block.file_name for block in blocks})
     st.session_state.index = build_index(chunks)
-    st.session_state.qa_history = []
-    st.session_state.last_answer = None
-    st.session_state.summaries = []
-    st.session_state.flashcards = []
-    st.session_state.study_questions = []
-    st.session_state.last_results = []
+    _clear_derived_state(st.session_state)
 
     if chunks and st.session_state.index.is_ready:
         st.success(f"Processed {len(st.session_state.document_names)} document(s) into {len(chunks)} chunk(s).")
@@ -261,6 +254,26 @@ def _store_index(blocks: list, chunk_size: int, overlap: int, strategy: str) -> 
         st.warning("Parsed the documents into chunks, but no searchable terms were found.")
     else:
         st.warning("Parsed the documents, but no searchable chunks were created.")
+
+
+def _clear_derived_state(state: MutableMapping[str, Any]) -> None:
+    """Clear outputs that belong to a previous document collection."""
+
+    state["qa_history"] = []
+    state["last_answer"] = None
+    state["summaries"] = []
+    state["flashcards"] = []
+    state["study_questions"] = []
+    state["last_results"] = []
+
+
+def _clear_document_state(state: MutableMapping[str, Any]) -> None:
+    """Clear indexed documents and every output derived from them."""
+
+    state["chunks"] = []
+    state["document_names"] = []
+    state["index"] = None
+    _clear_derived_state(state)
 
 
 def _show_index_status() -> None:

@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "qa": [
+    {
+      "id": "dual_safety_definition",
+      "enough_evidence": true,
+      "must_include": [
+        "descarga segura del actuador",
+        "prevención de arranque inesperado",
+        "válvula 1v1"
+      ],
+      "must_not_include": [
+        "información legal",
+        "ciente volumen",
+        "circuitos mostrados",
+        "rango de descarga segura del funciones"
+      ],
+      "citation_chunks": [3, 4, 5],
+      "require_complete_sentences": true
+    }
+  ],
+  "study_questions": {
+    "min_items": 3,
+    "max_items": 10,
+    "citation_chunks": [3, 4, 5],
+    "must_include": [
+      "descarga segura del actuador",
+      "prevención de arranque inesperado",
+      "válvula 1v1"
+    ],
+    "must_not_include": [
+      "información legal",
+      "ciente volumen",
+      "what is"
+    ]
+  },
+  "flashcards": {
+    "min_items": 3,
+    "max_items": 10,
+    "citation_chunks": [3, 4, 5],
+    "must_include": [
+      "descarga segura del actuador",
+      "prevención de arranque inesperado",
+      "válvula 1v1"
+    ],
+    "must_not_include": [
+      "información legal",
+      "ciente volumen",
+      "what is a key point"
+    ]
+  },
+  "source_quality": {
+    "low_value_chunks": [1, 2, 6],
+    "technical_chunks": [3, 4, 5],
+    "forbidden_citation_chunks": [1, 2, 6]
+  }
+}

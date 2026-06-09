@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "name": "Unsupported relation across separate technical chunks",
+  "chunks": [
+    {
+      "chunk_index": 1,
+      "page_number": 3,
+      "text": "# ISO 12100\nLa norma ISO 12100 exige realizar una evaluación de riesgos antes de diseñar las medidas de seguridad."
+    },
+    {
+      "chunk_index": 2,
+      "page_number": 8,
+      "text": "# Presión de servicio\nEl circuito neumático funciona con una presión de servicio de 6 bar."
+    }
+  ],
+  "qa_cases": [
+    {
+      "id": "unsupported_standard_pressure",
+      "question": "¿Qué presión exige la norma ISO 12100?",
+      "scores": {
+        "1": 0.9,
+        "2": 0.8
+      }
+    },
+    {
+      "id": "supported_service_pressure",
+      "question": "¿Cuál es la presión de servicio del circuito neumático?",
+      "scores": {
+        "1": 0.4,
+        "2": 0.9
+      }
+    },
+    {
+      "id": "unsupported_maximum_pressure",
+      "question": "¿Qué presión máxima tiene el circuito neumático?",
+      "scores": {
+        "2": 0.95
+      }
+    }
+  ]
+}

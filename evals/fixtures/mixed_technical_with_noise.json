@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "name": "Technical evidence mixed with a legal footer",
+  "chunks": [
+    {
+      "chunk_index": 1,
+      "page_number": 6,
+      "text": "# Válvula 1V1\nLa válvula 1V1 bloquea el flujo de aire cuando detecta una condición insegura. Información legal y condiciones marco del fabricante."
+    },
+    {
+      "chunk_index": 2,
+      "page_number": 7,
+      "text": "En el lado seguro con SMC. Productos SMC y componentes adecuados para su aplicación. Expertise – Passion – Automation."
+    }
+  ],
+  "qa_cases": [
+    {
+      "id": "mixed_chunk_valve_function",
+      "question": "¿Cuál es la función de la válvula 1V1?",
+      "scores": {
+        "1": 0.82,
+        "2": 0.97
+      }
+    }
+  ]
+}

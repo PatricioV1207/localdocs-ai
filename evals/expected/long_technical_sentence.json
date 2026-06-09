@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "qa": [
+    {
+      "id": "long_pressure_monitoring_function",
+      "enough_evidence": true,
+      "must_include": [
+        "monitorización de presión segura",
+        "controla"
+      ],
+      "must_not_include": [
+        "..."
+      ],
+      "citation_chunks": [
+        1
+      ],
+      "require_complete_sentences": true
+    }
+  ],
+  "study_questions": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      1
+    ],
+    "must_include": [
+      "monitorización de presión segura"
+    ],
+    "must_not_include": []
+  },
+  "flashcards": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      1
+    ],
+    "must_include": [
+      "monitorización de presión segura",
+      "controla"
+    ],
+    "must_not_include": [
+      "..."
+    ]
+  },
+  "summaries": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      1
+    ],
+    "must_include": [
+      "monitorización de presión segura"
+    ],
+    "must_not_include": [
+      "..."
+    ]
+  },
+  "source_quality": {
+    "low_value_chunks": [],
+    "technical_chunks": [
+      1
+    ],
+    "forbidden_citation_chunks": []
+  }
+}

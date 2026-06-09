@@ -5,7 +5,12 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 
-from localdocs.cleaning import appears_spanish, best_sentences, informative_chunks
+from localdocs.cleaning import (
+    appears_spanish,
+    best_sentences,
+    informative_chunks,
+    is_low_value_text,
+)
 from localdocs.models import Citation, DocumentChunk, DocumentSummary
 
 OPENAI_FALLBACK_NOTE = "OpenAI generation is unavailable, so LocalDocs used local extractive mode."
@@ -26,7 +31,11 @@ def summarize_documents(
     api_key = (openai_api_key or os.getenv("OPENAI_API_KEY")) if use_openai else None
     summaries: list[DocumentSummary] = []
     for file_name, document_chunks in sorted(grouped_chunks.items()):
-        selected_chunks = informative_chunks(document_chunks, limit=4)
+        selected_chunks = [
+            chunk
+            for chunk in informative_chunks(document_chunks)
+            if not is_low_value_text(chunk.text)
+        ][:4]
         citations: list[Citation] = []
         summary_text = None
         used_llm = False

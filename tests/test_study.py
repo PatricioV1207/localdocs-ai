@@ -37,6 +37,25 @@ def test_export_study_questions_markdown(tmp_path):
     assert "Source: note.txt, chunk 1" in content
 
 
+def test_study_question_does_not_treat_funciona_as_funcion():
+    chunk = DocumentChunk(
+        text=(
+            "# Presión de servicio\n"
+            "El circuito neumático funciona con una presión de servicio de 6 bar."
+        ),
+        file_name="manual.pdf",
+        file_path="manual.pdf",
+        file_type="pdf",
+        chunk_index=2,
+        page_number=8,
+    )
+
+    questions = generate_study_questions([chunk], max_questions=1)
+
+    assert len(questions) == 1
+    assert questions[0].question == "¿Qué es la presión de servicio?"
+
+
 def test_generate_study_questions_avoids_weak_repeated_keywords():
     chunks = [
         DocumentChunk(

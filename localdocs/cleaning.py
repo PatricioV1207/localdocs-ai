@@ -477,6 +477,8 @@ def is_low_value_text(text: str) -> bool:
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
     if len(words) < 6:
         return True
+    if _contains_technical_evidence_sentence(text):
+        return False
     if any(re.search(pattern, lower) for pattern in HARD_LOW_VALUE_PATTERNS):
         return True
 
@@ -577,6 +579,21 @@ def best_sentences(text: str, query: str = "", limit: int = 2) -> list[str]:
     return ranked[:limit]
 
 
+def truncate_at_clause(text: str, max_chars: int) -> str:
+    """Shorten long prose at a clause boundary without emitting a fragment."""
+
+    compact = " ".join(text.split())
+    if len(compact) <= max_chars:
+        return compact
+
+    prefix = compact[:max_chars]
+    boundaries = [match.start() for match in re.finditer(r"[,;:]", prefix)]
+    useful_boundaries = [position for position in boundaries if position >= max_chars // 2]
+    if not useful_boundaries:
+        return compact
+    return prefix[: useful_boundaries[-1]].rstrip(" ,;:") + "."
+
+
 def sentence_quality_score(sentence: str, query_terms: set[str] | None = None) -> float:
     """Score a sentence for extractive answers and study content."""
 
@@ -642,6 +659,20 @@ def is_quality_sentence(sentence: str) -> bool:
     ):
         return False
     return True
+
+
+def _contains_technical_evidence_sentence(text: str) -> bool:
+    action_pattern = re.compile(
+        r"\b(?:bloquea|conmuta|controla|detecta|evacua|evita|garantiza|"
+        r"libera|monitoriza|permite|previene|proporciona|reduce|regula|"
+        r"supervisa|se define como|blocks|controls|detects|prevents|"
+        r"regulates|supervises)\b",
+        re.IGNORECASE,
+    )
+    for sentence in split_sentences(text):
+        if action_pattern.search(sentence) and is_quality_sentence(sentence):
+            return True
+    return False
 
 
 def informative_terms(text: str) -> set[str]:

@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "qa": [
+    {
+      "id": "unsupported_standard_pressure",
+      "enough_evidence": false,
+      "must_include": [
+        "could not find enough strong evidence"
+      ],
+      "must_not_include": [
+        "6 bar",
+        "iso 12100 exige"
+      ],
+      "citation_chunks": [],
+      "require_complete_sentences": true
+    },
+    {
+      "id": "supported_service_pressure",
+      "enough_evidence": true,
+      "must_include": [
+        "presión de servicio",
+        "6 bar"
+      ],
+      "must_not_include": [
+        "iso 12100",
+        "evaluación de riesgos"
+      ],
+      "citation_chunks": [
+        2
+      ],
+      "require_complete_sentences": true
+    },
+    {
+      "id": "unsupported_maximum_pressure",
+      "enough_evidence": false,
+      "must_include": [
+        "could not find enough strong evidence"
+      ],
+      "must_not_include": [
+        "6 bar"
+      ],
+      "citation_chunks": [],
+      "require_complete_sentences": true
+    }
+  ],
+  "study_questions": {
+    "min_items": 2,
+    "max_items": 2,
+    "citation_chunks": [
+      1,
+      2
+    ],
+    "must_include": [
+      "norma iso 12100",
+      "presión de servicio"
+    ],
+    "must_not_include": [
+      "función de la presión de servicio"
+    ]
+  },
+  "flashcards": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      2
+    ],
+    "must_include": [
+      "presión de servicio",
+      "6 bar"
+    ],
+    "must_not_include": [
+      "iso 12100 exige una presión"
+    ]
+  },
+  "source_quality": {
+    "low_value_chunks": [],
+    "technical_chunks": [
+      1,
+      2
+    ],
+    "forbidden_citation_chunks": []
+  }
+}

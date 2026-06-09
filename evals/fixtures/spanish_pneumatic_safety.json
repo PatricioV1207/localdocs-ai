@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "name": "Spanish pneumatic safety concepts",
+  "chunks": [
+    {
+      "chunk_index": 1,
+      "page_number": 1,
+      "text": "Información legal y condiciones marco. Productos SMC Tecnical. Contacto: +34 973 000 000, info@example.com, www.example.com."
+    },
+    {
+      "chunk_index": 2,
+      "page_number": 2,
+      "text": "Índice. Funciones de seguridad típicas ........ 7. Descripción del circuito ........ 12. Productos ........ 18."
+    },
+    {
+      "chunk_index": 3,
+      "page_number": 7,
+      "text": "# Descarga segura del actuador\nLa descarga segura del actuador se define como una función de seguridad que purga las cámaras de presión del actuador neumático para reducir de forma segura la fuerza o el par."
+    },
+    {
+      "chunk_index": 4,
+      "page_number": 8,
+      "text": "# Prevención de arranque inesperado\nLa prevención de arranque inesperado es una función de seguridad que evita que vuelva a fluir energía neumática hacia el actuador cuando el sistema está en estado seguro."
+    },
+    {
+      "chunk_index": 5,
+      "page_number": 12,
+      "text": "# Descripción del circuito\nLa válvula 1V1 descarga las cámaras de presión del actuador neumático para lograr la descarga segura del actuador y bloquea el flujo de energía neumática para contribuir a la prevención de arranque inesperado."
+    },
+    {
+      "chunk_index": 6,
+      "page_number": 13,
+      "text": "ciente volumen de aire disponible antes seguridad sólo está permitido observar todo ello durante la implementación circuitos mostrados presentan aplicaciones de muestra"
+    }
+  ],
+  "qa_cases": [
+    {
+      "id": "dual_safety_definition",
+      "question": "¿Qué es descarga segura del actuador y prevención de arranque inesperado?",
+      "scores": {
+        "1": 0.96,
+        "2": 0.91,
+        "3": 0.89,
+        "4": 0.88,
+        "5": 0.87,
+        "6": 0.93
+      }
+    }
+  ]
+}

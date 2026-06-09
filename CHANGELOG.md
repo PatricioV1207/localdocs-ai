@@ -4,17 +4,30 @@
 
 ### Added
 
+- Deterministic regression fixture for unsupported cross-chunk relationships.
+- Quality fixtures for low-value-only documents, long technical sentences, and
+  technical evidence mixed with PDF footer noise.
 - Contributor guide.
 - Security policy.
 - GitHub issue and pull request templates.
 - GitHub Actions test workflow.
 - Screenshot placeholder documentation.
+- Deterministic quality standards, fixtures, expected results, and evaluation runner.
 
 ### Improved
 
+- Local extractive QA rejects relationships that no individual evidence
+  sentence supports.
+- Spanish study-question detection distinguishes `funciona` from `función`.
+- Summaries reject documents containing only legal, index, and commercial text.
+- Document replacement clears stale UI outputs from the previous collection.
+- Long extractive answers end at complete clause boundaries.
+- Technical evidence remains usable when PDF extraction appends a separate
+  legal or commercial footer.
 - README structure for open-source contributors.
 - Roadmap clarity for v0.4 plans.
 - Ignore rules for local caches, build artifacts, secrets, and generated exports.
+- CI quality gates for QA, study questions, flashcards, and source selection.
 
 ## v0.3.4
 

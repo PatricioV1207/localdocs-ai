@@ -119,3 +119,28 @@ def test_summary_openai_error_hides_raw_payload(monkeypatch):
     assert summary.note == OPENAI_FALLBACK_NOTE
     assert "authentication_error" not in summary.note
     assert summary.citations[0].label() == "safety.md, chunk 1"
+
+
+def test_summary_rejects_document_with_only_low_value_text(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    chunks = [
+        DocumentChunk(
+            text="Información legal y condiciones marco. Copyright 2026. Todos los derechos reservados.",
+            file_name="noise.pdf",
+            file_path="noise.pdf",
+            file_type="pdf",
+            chunk_index=1,
+        ),
+        DocumentChunk(
+            text="Índice. Seguridad neumática ........ 7. Productos ........ 18.",
+            file_name="noise.pdf",
+            file_path="noise.pdf",
+            file_type="pdf",
+            chunk_index=2,
+        ),
+    ]
+
+    summary = summarize_documents(chunks, use_openai=False)[0]
+
+    assert "No summary could be generated" in summary.summary
+    assert summary.citations == []

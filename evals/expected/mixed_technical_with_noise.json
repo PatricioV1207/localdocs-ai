@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "qa": [
+    {
+      "id": "mixed_chunk_valve_function",
+      "enough_evidence": true,
+      "must_include": [
+        "válvula 1v1",
+        "bloquea"
+      ],
+      "must_not_include": [
+        "información legal",
+        "productos smc",
+        "expertise"
+      ],
+      "citation_chunks": [
+        1
+      ],
+      "require_complete_sentences": true
+    }
+  ],
+  "study_questions": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      1
+    ],
+    "must_include": [
+      "válvula 1v1"
+    ],
+    "must_not_include": [
+      "información legal",
+      "productos smc"
+    ]
+  },
+  "flashcards": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      1
+    ],
+    "must_include": [
+      "válvula 1v1",
+      "bloquea"
+    ],
+    "must_not_include": [
+      "información legal",
+      "productos smc"
+    ]
+  },
+  "summaries": {
+    "min_items": 1,
+    "max_items": 1,
+    "citation_chunks": [
+      1
+    ],
+    "must_include": [
+      "válvula 1v1",
+      "bloquea"
+    ],
+    "must_not_include": [
+      "información legal",
+      "productos smc"
+    ]
+  },
+  "source_quality": {
+    "low_value_chunks": [
+      2
+    ],
+    "technical_chunks": [
+      1
+    ],
+    "forbidden_citation_chunks": [
+      2
+    ]
+  }
+}

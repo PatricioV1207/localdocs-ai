@@ -86,3 +86,12 @@ def test_best_concept_prefers_multiword_technical_phrases():
 
 def test_best_concept_rejects_weak_spanish_metadata():
     assert best_concept("Para únicamente el estudiante consulta el manual didáctico de Festo Weber.") == ""
+
+
+def test_mixed_technical_and_legal_chunk_remains_usable():
+    text = (
+        "La válvula 1V1 bloquea el flujo de aire cuando detecta una condición insegura. "
+        "Información legal y condiciones marco del fabricante."
+    )
+
+    assert is_low_value_text(text) is False
