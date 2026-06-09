@@ -15,10 +15,10 @@ No unreleased changes yet.
 - Security policy.
 - GitHub issue and pull request templates.
 - GitHub Actions test workflow.
-- Screenshot placeholder documentation.
+- Interface preview and screenshot capture documentation.
 - Deterministic quality standards, fixtures, expected results, and evaluation runner.
 - Presentation-ready demo guide, release notes, repository badges, and
-  versionable screenshot placeholders.
+  versionable interface previews.
 
 ### Improved
 
@@ -36,6 +36,8 @@ No unreleased changes yet.
 - CI quality gates for QA, study questions, flashcards, and source selection.
 - Open-source contribution, security, issue, and pull request guidance aligned
   with the current validation workflow.
+- Public-facing preview language and CI naming that accurately describe the
+  current repository state without implying an existing Git tag.
 
 ## v0.3.4
 

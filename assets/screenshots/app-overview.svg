@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-  <title id="title">LocalDocs AI document processing screenshot placeholder</title>
-  <desc id="desc">A placeholder showing the intended framing for the processed documents view.</desc>
+  <title id="title">LocalDocs AI document processing interface preview</title>
+  <desc id="desc">A sample-based preview of the processed documents view.</desc>
   <rect width="1200" height="720" fill="#f8fafc"/>
   <rect x="0" y="0" width="250" height="720" fill="#e2e8f0"/>
   <rect x="286" y="42" width="866" height="636" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
@@ -15,7 +15,7 @@
   <text x="356" y="428" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#0f172a">2</text>
   <text x="770" y="382" font-family="Arial, sans-serif" font-size="17" fill="#475569">Chunks</text>
   <text x="770" y="428" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#0f172a">2</text>
-  <text x="326" y="548" font-family="Arial, sans-serif" font-size="18" fill="#64748b">Replace with a release screenshot captured from sample_docs/.</text>
+  <text x="326" y="548" font-family="Arial, sans-serif" font-size="18" fill="#64748b">Sample workflow · local processing · no API key required</text>
   <text x="36" y="72" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#0f172a">Settings</text>
   <text x="36" y="118" font-family="Arial, sans-serif" font-size="16" fill="#475569">Local extractive mode</text>
 </svg>

@@ -2,7 +2,7 @@
 name: Quality regression
 about: Report a grounded-answer, summary, source, or study-output regression
 title: "[Quality]: "
-labels: quality
+labels: ""
 assignees: ""
 ---
 

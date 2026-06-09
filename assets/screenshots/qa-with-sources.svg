@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-  <title id="title">LocalDocs AI cited question answering screenshot placeholder</title>
-  <desc id="desc">A placeholder showing the intended framing for an answer and source citation.</desc>
+  <title id="title">LocalDocs AI cited question answering interface preview</title>
+  <desc id="desc">A sample-based preview of an answer and its source citation.</desc>
   <rect width="1200" height="720" fill="#f8fafc"/>
   <rect x="48" y="40" width="1104" height="640" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
   <text x="90" y="102" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#0f172a">Cited local answer</text>
@@ -12,5 +12,5 @@
   <text x="90" y="430" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">Sources</text>
   <rect x="90" y="458" width="1020" height="72" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
   <text x="122" y="503" font-family="Arial, sans-serif" font-size="18" fill="#334155">sample_note.txt, chunk 1</text>
-  <text x="90" y="610" font-family="Arial, sans-serif" font-size="18" fill="#64748b">Replace with a release screenshot that keeps the citation visible.</text>
+  <text x="90" y="610" font-family="Arial, sans-serif" font-size="18" fill="#64748b">Sample data · grounded answer · visible source reference</text>
 </svg>

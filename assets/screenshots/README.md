@@ -1,10 +1,10 @@
-# Screenshot Guide
+# Preview and Screenshot Guide
 
-The SVG files in this directory reserve stable README image paths until final
-PNG captures are approved.
+The SVG files in this directory provide lightweight interface previews based on
+the repository's sample workflow.
 
-When release screenshots are ready, add PNG files using the same base names and
-update the two image links in `README.md`:
+When real release screenshots are approved, add PNG files using the same base
+names and update the two image links in `README.md`:
 
 - `app-overview`: initial app state after processing `sample_docs/`.
 - `qa-with-sources`: the sample TF-IDF answer with its source citation visible.

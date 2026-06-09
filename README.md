@@ -4,8 +4,8 @@
 
 **Private, cited document intelligence that runs locally by default.**
 
-[![Tests](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml)
-[![Release](https://img.shields.io/badge/release-v0.3.5-2563eb.svg)](RELEASE_NOTES.md)
+[![Quality gates](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/PatricioV1207/localdocs-ai/actions/workflows/tests.yml)
+[![Version](https://img.shields.io/badge/version-v0.3.5-2563eb.svg)](RELEASE_NOTES.md)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-ff4b4b.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16a34a.svg)](LICENSE)
@@ -26,16 +26,15 @@ Many people have useful knowledge scattered across PDFs, notes, manuals, and gui
 
 The app works without an OpenAI API key. OpenAI generation is disabled by default. If `OPENAI_API_KEY` is configured and the sidebar option is enabled, LocalDocs can optionally generate more natural answers and summaries, but answers are still based on retrieved document context.
 
-## Preview
+## Interface Preview
 
 | Document processing | Cited Q&A |
 | --- | --- |
-| ![Document processing screenshot placeholder](assets/screenshots/app-overview.svg) | ![Cited answer screenshot placeholder](assets/screenshots/qa-with-sources.svg) |
+| ![Document processing interface preview](assets/screenshots/app-overview.svg) | ![Cited answer interface preview](assets/screenshots/qa-with-sources.svg) |
 
-These are lightweight screenshot placeholders with the final filenames and
-dimensions already established. See
-[assets/screenshots/README.md](assets/screenshots/README.md) before replacing
-them with real captures; never use private documents in repository screenshots.
+The previews use only repository sample content. Capture guidance for future
+release screenshots lives in
+[assets/screenshots/README.md](assets/screenshots/README.md).
 
 ## Features
 

@@ -33,6 +33,9 @@ OPENAI_API_KEY="" python scripts/run_quality_eval.py
 
 GitHub Actions runs the same gates on Python 3.11 and 3.12.
 
+The final local verification for v0.3.5 passed 94 pytest tests and 265
+deterministic quality checks on Python 3.13.
+
 ## Known Limitations
 
 - Scanned PDFs require OCR and are not supported.

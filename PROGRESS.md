@@ -38,10 +38,15 @@
 - Documented the contributor workflow in `AGENTS.md` and `README.md`.
 - Reworked `README.md` around local-first value, reproducible setup, a
   60-second demo, project badges, current scope, and contributor entry points.
-- Added versionable screenshot placeholders under `assets/screenshots/`.
+- Added versionable interface previews and screenshot guidance under
+  `assets/screenshots/`.
 - Added `DEMO.md` and `RELEASE_NOTES.md`.
 - Expanded `CONTRIBUTING.md`, `SECURITY.md`, issue templates, and the pull
   request template to match the current quality gates and privacy rules.
+- Completed a final maintainer review: corrected version/release wording,
+  replaced public placeholder language with sample-based interface previews,
+  clarified CI job naming, and updated the ignored local architecture and
+  roadmap notes to v0.3.5.
 
 ## Validation Checklist
 
@@ -54,8 +59,11 @@
 - [x] Presentation demo - processed 2 sample documents, returned the documented
   TF-IDF answer and citation, then generated summaries, flashcards, and study
   questions without browser warnings or errors
-- [x] Documentation audit - internal Markdown links resolve, both screenshot
-  SVG placeholders parse, and GitHub templates contain current validation steps
+- [x] Documentation audit - internal Markdown links resolve, both interface
+  preview SVGs parse, and GitHub templates contain current validation steps
+- [x] CI audit - workflow YAML is valid, permissions remain read-only, push,
+  pull request, and manual triggers are configured, and the Python 3.11/3.12
+  matrix runs pytest, compileall, and deterministic quality evaluations
 
 Update this checklist with the latest verified state when quality behavior or
 fixtures change.
