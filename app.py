@@ -334,6 +334,7 @@ def _show_summaries() -> None:
 def _show_study_tools(config) -> None:
     st.subheader("Study Tools")
     st.caption("Questions and flashcards are generated locally from extracted document concepts.")
+    st.caption("LocalDocs may show fewer items when low-quality generated items are filtered out.")
 
     if not st.session_state.chunks:
         st.info("Process documents before generating flashcards or study questions.")

@@ -16,6 +16,22 @@
 - Roadmap clarity for v0.4 plans.
 - Ignore rules for local caches, build artifacts, secrets, and generated exports.
 
+## v0.3.4
+
+### Fixed
+
+- Rejected malformed Spanish concepts and questions, including article/determiner collisions and incorrect noun gender.
+- Prevented index, legal, conditions, product, contact, and marketing sections from outranking technical safety content.
+- Required flashcard answers to contain relevant concept evidence and technical action evidence for function questions.
+- Removed page artifacts, table leaders, commercial text, and heading collisions from local extractive answers.
+
+### Improved
+
+- Added technical concepts for safe speed, safe maintenance, safe pressure monitoring, safe position, and required performance levels.
+- Reduced default flashcards and study questions from 20 to 10.
+- Made previews explicitly note that quality filtering may return fewer items.
+- Added focused v0.3.4 tests for grammar, source ranking, answer relevance, and Spanish QA cleanup.
+
 ## v0.3.3
 
 ### Fixed

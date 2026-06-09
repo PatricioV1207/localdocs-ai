@@ -15,6 +15,7 @@ dist/
 .env.*
 !.env.example
 .DS_Store
+docs/
 exports/*.md
 exports/*.tsv
 exports/obsidian_vault/

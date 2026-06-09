@@ -4,18 +4,44 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from localdocs.cleaning import appears_spanish, informative_chunks, informative_terms, is_low_value_text
+from localdocs.cleaning import (
+    appears_spanish,
+    informative_chunks,
+    informative_terms,
+    is_low_value_text,
+    is_quality_sentence,
+)
 from localdocs.concepts import (
     concept_key,
     concept_sentence,
     extract_concepts,
+    is_valid_generated_question,
+    normalize_generated_question,
     related_concept,
     spanish_concept_phrase,
 )
 from localdocs.models import Citation, DocumentChunk, Flashcard
 
 
-def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 20) -> list[Flashcard]:
+FUNCTION_ANSWER_MARKERS = (
+    "bloquea",
+    "conmuta",
+    "controla",
+    "evacua",
+    "evita",
+    "garantiza",
+    "libera",
+    "lleva a cabo",
+    "monitoriza",
+    "permite",
+    "previene",
+    "proporciona",
+    "reduce",
+    "se define como",
+)
+
+
+def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 10) -> list[Flashcard]:
     """Generate simple extractive flashcards from document chunks."""
 
     flashcards: list[Flashcard] = []
@@ -30,7 +56,8 @@ def generate_flashcards(chunks: list[DocumentChunk], max_cards: int = 20) -> lis
             continue
 
         question, answer = _card_from_chunk(chunk)
-        if not question or not answer:
+        question = normalize_generated_question(question)
+        if not question or not answer or not is_valid_generated_question(question):
             continue
 
         citation = Citation.from_chunk(chunk)
@@ -80,6 +107,8 @@ def _card_from_chunk(chunk: DocumentChunk) -> tuple[str, str]:
         question = _spanish_card_question(chunk.text, concept, answer)
     else:
         question = f"What is a key point about {concept}?"
+    if "función" in question.lower() and not _has_function_evidence(answer):
+        return "", ""
     return question, _truncate(answer, 280)
 
 
@@ -92,13 +121,33 @@ def _spanish_card_question(text: str, concept: str, answer: str) -> str:
         return f"¿Qué función cumple {label}?"
     if "se define como" in answer.lower() or "es una función" in answer.lower() or "consiste en" in answer.lower():
         return f"¿Qué es {label}?"
-    return f"¿Cuál es la función de {label}?"
+    if _has_function_evidence(answer):
+        return f"¿Cuál es la función de {label}?"
+    return f"¿Qué es {label}?"
 
 
 def _answer_matches_concept(answer: str, concept: str) -> bool:
+    if not is_quality_sentence(answer):
+        return False
+    if len(answer.split()) < 5:
+        return False
+    if not answer.rstrip().endswith((".", "?", "!")):
+        return False
+    if answer.lstrip().startswith(("-", "–", "—")):
+        return False
+    if concept_key(concept) in concept_key(answer):
+        return True
     answer_terms = informative_terms(answer)
     concept_terms = informative_terms(concept)
-    return bool(answer_terms & concept_terms)
+    if not concept_terms:
+        return False
+    overlap = len(answer_terms & concept_terms)
+    return overlap >= 2 and overlap / len(concept_terms) >= 0.5
+
+
+def _has_function_evidence(answer: str) -> bool:
+    lower = answer.lower()
+    return any(marker in lower for marker in FUNCTION_ANSWER_MARKERS)
 
 
 def _truncate(text: str, max_chars: int) -> str:

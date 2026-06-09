@@ -36,8 +36,8 @@ class LLMConfig:
 
 @dataclass(frozen=True)
 class StudyConfig:
-    max_flashcards: int = 20
-    max_questions: int = 20
+    max_flashcards: int = 10
+    max_questions: int = 10
 
 
 @dataclass(frozen=True)
@@ -96,8 +96,8 @@ def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> LocalDocsConfig:
     minimum_score = _score(search_section, "minimum_score", 0.05, warnings)
     export_dir = _string(exports_section, "export_dir", "exports", warnings)
     use_openai = _bool(llm_section, "use_openai_if_available", False, warnings)
-    max_flashcards = _positive_int(study_section, "max_flashcards", 20, warnings)
-    max_questions = _positive_int(study_section, "max_questions", 20, warnings)
+    max_flashcards = _positive_int(study_section, "max_flashcards", 10, warnings)
+    max_questions = _positive_int(study_section, "max_questions", 10, warnings)
     vault_dir = _string(obsidian_section, "vault_dir", "exports/obsidian_vault", warnings)
     flashcards_file = _string(anki_section, "flashcards_file", "exports/flashcards.tsv", warnings)
 

@@ -7,7 +7,7 @@
 
 LocalDocs AI is an open-source, local-first document intelligence app. It turns PDFs, DOCX files, text notes, and Markdown files into a private searchable knowledge base with cited answers, summaries, study questions, flashcards, and Markdown exports.
 
-Status: v0.3.3 implemented.
+Status: v0.3.4 implemented.
 
 ## Why LocalDocs AI?
 
@@ -23,7 +23,8 @@ The app works without an OpenAI API key. OpenAI generation is disabled by defaul
 - Ask questions and get cited answers.
 - Fall back to concise heuristic extractive answers without an API key.
 - Generate basic summaries.
-- Generate concept-based study questions and same-language flashcards with source references.
+- Generate grammar-validated study questions and same-language flashcards with source references.
+- Prefer fewer high-quality study items over filling the configured limit with weak content.
 - Export summaries and Q&A history to Markdown.
 - Export an Obsidian-friendly Markdown vault.
 - Export Anki-compatible flashcards as TSV.
@@ -31,7 +32,7 @@ The app works without an OpenAI API key. OpenAI generation is disabled by defaul
 
 ## Not Included
 
-LocalDocs AI v0.3.3 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
+LocalDocs AI v0.3.4 intentionally does not include user accounts, authentication, cloud sync, OCR, audio transcription, image analysis, vector databases, desktop/mobile packaging, or multi-user collaboration.
 
 ## Supported Formats
 
@@ -40,7 +41,7 @@ LocalDocs AI v0.3.3 intentionally does not include user accounts, authentication
 - TXT files
 - Markdown files (`.md` and `.markdown`)
 
-PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.3.
+PDF support means PDFs that already contain selectable text. Scanned PDFs and images need OCR, which is out of scope for v0.3.4.
 
 ## Quick Start
 
@@ -73,17 +74,6 @@ Then open the Streamlit URL, upload documents or process the sample documents, a
 
 You can also click `Process sample documents` to try the files in `sample_docs/`.
 
-## Screenshots
-
-Screenshot placeholders and guidance live in [docs/screenshots](docs/screenshots/README.md).
-
-Suggested future screenshots:
-
-- Document upload and processing state
-- Answer with cited sources
-- Study Tools section
-- Exported Obsidian vault
-
 ## Configuration
 
 LocalDocs AI reads `localdocs_config.toml` from the project root. If the file is missing or invalid, the app uses defaults and shows readable warnings in the sidebar.
@@ -105,8 +95,8 @@ export_dir = "exports"
 use_openai_if_available = false
 
 [study]
-max_flashcards = 20
-max_questions = 20
+max_flashcards = 10
+max_questions = 10
 
 [obsidian]
 vault_dir = "exports/obsidian_vault"
@@ -213,10 +203,6 @@ localdocs-ai/
 │   ├── ISSUE_TEMPLATE/
 │   ├── workflows/
 │   └── pull_request_template.md
-├── docs/
-│   ├── screenshots/
-│   ├── architecture.md
-│   └── roadmap.md
 ├── localdocs/
 │   ├── parser.py
 │   ├── chunker.py
@@ -243,8 +229,6 @@ localdocs-ai/
 
 ## Roadmap
 
-See [docs/roadmap.md](docs/roadmap.md).
-
 v0.4 is planned to focus on research comparison mode, richer study workflows, and multi-project knowledge bases while preserving local-first defaults.
 
 ## Current Limitations
@@ -253,7 +237,8 @@ v0.4 is planned to focus on research comparison mode, richer study workflows, an
 - DOCX parsing reads normal paragraphs only; legacy `.doc` files are not supported.
 - Search is keyword-oriented TF-IDF, not semantic search.
 - Local answers select and join source sentences heuristically; they are not full abstractive summaries.
-- Cleaning and concept extraction are heuristic and may still miss specialized terminology or unusual layouts.
+- Cleaning, grammatical validation, and concept extraction are heuristic and may still miss specialized terminology or unusual layouts.
+- Strict quality filters can return fewer study questions or flashcards than the configured maximum.
 - Spanish and English are the best-supported study-content languages; mixed-language documents can be inconsistent.
 - Obsidian export is a Markdown folder export only.
 - Anki export is TSV only.

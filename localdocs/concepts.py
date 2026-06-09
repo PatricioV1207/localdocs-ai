@@ -28,9 +28,14 @@ DOMAIN_PATTERNS: list[tuple[str, float]] = [
     (r"\bprevenci[oó]n de arranque inesperado\b", 135.0),
     (r"\bdescarga segura del actuador\b", 134.0),
     (r"\bdescarga segura del sistema\b", 133.0),
+    (r"\bvelocidad reducida segura\b", 133.0),
+    (r"\bmantenimiento seguro\b", 133.0),
+    (r"\bmonitorizaci[oó]n de presi[oó]n segura\b", 133.0),
+    (r"\bposici[oó]n segura\b", 133.0),
     (r"\bcircuitos el[eé]ctricos de seguridad\b", 132.0),
-    (r"\bv[aá]lvula relacionada con la seguridad\b", 131.0),
+    (r"\bv[aá]lvula relacionada con la seguridad(?:\s+\d+[a-z]\d+)?\b", 141.0),
     (r"\bunidad de rel[eé]s de seguridad\b", 133.0),
+    (r"\bunidades de tratamiento de aire\b", 130.0),
     (r"\balimentaci[oó]n de energ[ií]a el[eé]ctrica\b", 129.0),
     (r"\balimentaci[oó]n de aire comprimido\b", 128.0),
     (r"\bseguridad en sistemas neum[aá]ticos\b", 127.0),
@@ -44,7 +49,7 @@ DOMAIN_PATTERNS: list[tuple[str, float]] = [
     (r"\bsensores? de presi[oó]n\b", 120.0),
     (r"\bcircuitos? neum[aá]ticos\b", 119.0),
     (r"\bt[eé]cnica de seguridad\b", 118.0),
-    (r"\bniveles? de prestaciones\b", 117.0),
+    (r"\bniveles? de prestaciones(?: requerido)?\b", 117.0),
     (r"\bcategor[ií]a\s*[134]\b", 116.0),
     (r"\biso\s*13849(?:-\d+)?\b", 115.0),
     (r"\biso\s*12100\b", 114.0),
@@ -74,6 +79,17 @@ GENERIC_HEADINGS = {
     "índice",
 }
 
+GENERIC_CONCEPTS = {
+    "categoría",
+    "circuito",
+    "circuitos",
+    "esta categoría",
+    "este categoría",
+    "norma",
+    "sistema",
+    "sistemas",
+}
+
 FEMININE_HEADS = {
     "alimentación",
     "categoría",
@@ -81,8 +97,10 @@ FEMININE_HEADS = {
     "evaluación",
     "evacuación",
     "función",
+    "monitorización",
     "parada",
     "plataforma",
+    "posición",
     "presión",
     "prevención",
     "reducción",
@@ -90,9 +108,10 @@ FEMININE_HEADS = {
     "técnica",
     "unidad",
     "válvula",
+    "velocidad",
 }
 
-PLURAL_FEMININE_HEADS = {"funciones", "válvulas"}
+PLURAL_FEMININE_HEADS = {"funciones", "unidades", "válvulas"}
 PLURAL_MASCULINE_HEADS = {"actuadores", "circuitos", "niveles", "relés", "sensores", "sistemas"}
 
 DEFINITION_MARKERS = (
@@ -120,6 +139,8 @@ def extract_concepts(text: str, limit: int = 3) -> list[str]:
 
     best_by_key: dict[str, _Candidate] = {}
     for candidate in candidates:
+        if _has_malformed_start(candidate.phrase):
+            continue
         phrase = _clean_phrase(candidate.phrase)
         if not _valid_concept(phrase):
             continue
@@ -193,6 +214,60 @@ def spanish_concept_phrase(concept: str) -> str:
     else:
         article = "el"
     return f"{article} {compact}"
+
+
+def normalize_generated_question(question: str) -> str:
+    """Normalize safe Spanish contractions without hiding malformed concepts."""
+
+    compact = " ".join(question.split())
+    compact = re.sub(r"\bde el\b", "del", compact, flags=re.IGNORECASE)
+    compact = re.sub(r"\ba el\b", "al", compact, flags=re.IGNORECASE)
+    return compact
+
+
+def is_valid_generated_question(question: str) -> bool:
+    """Validate generated question grammar before it reaches previews or exports."""
+
+    raw_lower = " ".join(question.split()).lower()
+    if re.search(
+        r"\bde el\s+(?:monitorizaci[oó]n|unidades|descarga|evacuaci[oó]n|prevenci[oó]n)\b|"
+        r"\bde la\s+(?:sistema|circuito|actuador)\b",
+        raw_lower,
+    ):
+        return False
+    compact = normalize_generated_question(question)
+    lower = compact.lower()
+    if len(compact) < 10 or not compact.endswith("?"):
+        return False
+    if re.search(r"\b(?:de la el|de el la|de los el|de las la)\b", lower):
+        return False
+    if re.search(
+        r"\b(?:el|la|los|las)\s+(?:esta|este|estas|estos)\b|"
+        r"\b(?:esta|este)\s+categor[ií]a\b",
+        lower,
+    ):
+        return False
+    if re.search(
+        r"\bel\s+(?:monitorizaci[oó]n|unidades|descarga|evacuaci[oó]n|prevenci[oó]n)\b|"
+        r"\bla\s+(?:sistema|circuito|actuador)\b",
+        lower,
+    ):
+        return False
+    target_match = re.search(
+        r"(?:qu[eé] es|funci[oó]n de|funci[oó]n cumple|para|importante)\s+(.+?)\?$",
+        lower,
+    )
+    if target_match and _has_malformed_start(target_match.group(1)):
+        return False
+    return True
+
+
+def is_valid_concept(concept: str) -> bool:
+    """Public validation helper used by tests and generation paths."""
+
+    if _has_malformed_start(concept):
+        return False
+    return _valid_concept(_clean_phrase(concept))
 
 
 def related_concept(text: str, excluded: str) -> str:
@@ -320,6 +395,8 @@ def _valid_concept(phrase: str) -> bool:
         return False
     if concept_key(phrase) in GENERIC_HEADINGS:
         return False
+    if concept_key(phrase) in GENERIC_CONCEPTS:
+        return False
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", phrase.lower())
     if len(words) > 8:
         return False
@@ -327,7 +404,7 @@ def _valid_concept(phrase: str) -> bool:
         return False
     if re.search(
         r"\b(copyright|contacto|direcci[oó]n|tel[eé]fono|informaci[oó]n legal|"
-        r"condiciones marco|productos?|www|ciente)\b",
+        r"condiciones marco|productos?|www|ciente|[ií]ndice)\b",
         phrase,
         flags=re.IGNORECASE,
     ):
@@ -376,8 +453,21 @@ def _is_broken_fragment(value: str) -> bool:
     return bool(
         re.search(
             r"\bciente\b|\bseguridad\s+s[oó]lo\s+est[aá]\s+permitido\b|"
-            r"\bobservar\s+todo\s+ello\s+durante\b|"
-            r"\bcircuitos\s+mostrados\s+presentan\s+aplicaciones\b",
+            r"\bobserva(?:r|ci[oó]n)\s+todo\s+ello\s+durante\b|"
+            r"\bcircuitos\s+mostrados\s+presentan\s+aplicaciones\b|"
+            r"\bpresi[oó]n residual\s+[ií]ndice\b",
             lower,
+        )
+    )
+
+
+def _has_malformed_start(value: str) -> bool:
+    compact = " ".join(value.split()).lower().strip(" .,:;¿?¡!")
+    return bool(
+        re.match(
+            r"^(?:(?:el|la|los|las)\s+(?:esta|este|estas|estos)\b|"
+            r"(?:esta|este)\s+categor[ií]a\b|"
+            r"de\s+(?:el|la|los|las)\b)",
+            compact,
         )
     )

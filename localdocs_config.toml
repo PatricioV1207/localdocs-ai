@@ -14,8 +14,8 @@ export_dir = "exports"
 use_openai_if_available = false
 
 [study]
-max_flashcards = 20
-max_questions = 20
+max_flashcards = 10
+max_questions = 10
 
 [obsidian]
 vault_dir = "exports/obsidian_vault"

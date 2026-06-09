@@ -13,13 +13,15 @@ from localdocs.concepts import (
     concept_key,
     concept_sentence,
     extract_concepts,
+    is_valid_generated_question,
+    normalize_generated_question,
     related_concept,
     spanish_concept_phrase,
 )
 from localdocs.models import Citation, DocumentChunk, StudyQuestion
 
 
-def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 20) -> list[StudyQuestion]:
+def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 10) -> list[StudyQuestion]:
     """Generate simple local study questions from chunks."""
 
     questions: list[StudyQuestion] = []
@@ -42,7 +44,8 @@ def generate_study_questions(chunks: list[DocumentChunk], max_questions: int = 2
             continue
 
         question_text = _question_from_chunk(chunk, concept)
-        if not question_text:
+        question_text = normalize_generated_question(question_text)
+        if not question_text or not is_valid_generated_question(question_text):
             continue
 
         citation = Citation.from_chunk(chunk)

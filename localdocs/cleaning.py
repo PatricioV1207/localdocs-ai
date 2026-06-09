@@ -25,9 +25,33 @@ LOW_VALUE_PATTERNS = [
     r"\bcondiciones marco\b",
     r"\bdatos de contacto\b",
     r"\btel[eé]fono\b",
-    r"\bdirecci[oó]n\b",
+    r"\bdirecci[oó]n\s+(?:postal|de contacto)\b",
     r"\bproductos?\b",
     r"\bmarketing\b",
+    r"\bproductos?\s+smc\b",
+    r"\bcomponentes adecuados para su aplicaci[oó]n\b",
+    r"\bexpertise\s*[-–—]\s*passion\s*[-–—]\s*automation\b",
+    r"\ben el lado seguro con smc\b",
+    r"\bwww\.tecnical\.cat\b",
+    r"\bmanresa\b",
+    r"\blleida\b",
+    r"\bigualada\b",
+    r"\bripoll\b",
+    r"\bmanresa\b",
+    r"\blleida\b",
+    r"\bigualada\b",
+    r"\bripoll\b",
+]
+
+HARD_LOW_VALUE_PATTERNS = [
+    r"^\s*(?:table of contents|contents|[ií]ndice)\b",
+    r"\binformaci[oó]n legal\b",
+    r"\bcondiciones marco\b",
+    r"\bproductos?\s+smc\b",
+    r"\bcomponentes adecuados para su aplicaci[oó]n\b",
+    r"\bexpertise\s*[-–—]\s*passion\s*[-–—]\s*automation\b",
+    r"\ben el lado seguro con smc\b",
+    r"\bwww\.tecnical\.cat\b",
 ]
 
 WEAK_TERMS = {
@@ -80,6 +104,10 @@ WEAK_TERMS = {
     "equipo",
     "equipos",
     "estaría",
+    "esta",
+    "estas",
+    "este",
+    "estos",
     "estudiante",
     "estudiantes",
     "festo",
@@ -176,6 +204,7 @@ WEAK_TERMS = {
 
 CONCEPT_CONNECTORS = {
     "and",
+    "con",
     "de",
     "del",
     "e",
@@ -341,6 +370,15 @@ TECHNICAL_HINTS = {
     "vault",
     "base",
     "knowledge",
+    "mantenimiento",
+    "monitorización",
+    "monitorizacion",
+    "posición",
+    "posicion",
+    "requerido",
+    "segura",
+    "tratamiento",
+    "velocidad",
     "flashcards",
     "searchable",
     "strategies",
@@ -368,12 +406,17 @@ PREFERRED_SECTION_PATTERNS = [
     r"\bdescarga segura del sistema\b",
     r"\bdescarga segura del actuador\b",
     r"\bprevenci[oó]n de arranque inesperado\b",
+    r"\bparada segura\b",
+    r"\bvelocidad reducida segura\b",
+    r"\bmantenimiento seguro\b",
+    r"\bmonitorizaci[oó]n de presi[oó]n segura\b",
+    r"\bposici[oó]n segura\b",
     r"\bcircuitos neum[aá]ticos\b",
     r"\biso\s*13849\b",
     r"\bdescripci[oó]n del circuito\b",
     r"\bevaluaci[oó]n de riesgos\b",
     r"\breducci[oó]n de riesgos\b",
-    r"\bniveles? de prestaciones\b",
+    r"\bniveles? de prestaciones(?: requerido)?\b",
     r"\bcategor[ií]a\s*[134]?\b",
 ]
 
@@ -434,7 +477,7 @@ def is_low_value_text(text: str) -> bool:
     words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
     if len(words) < 6:
         return True
-    if re.match(r"^(?:table of contents|contents|[ií]ndice)\b", lower):
+    if any(re.search(pattern, lower) for pattern in HARD_LOW_VALUE_PATTERNS):
         return True
 
     pattern_hits = sum(1 for pattern in LOW_VALUE_PATTERNS if re.search(pattern, lower))
@@ -539,12 +582,7 @@ def sentence_quality_score(sentence: str, query_terms: set[str] | None = None) -
 
     compact = " ".join(sentence.split())
     lower = compact.lower()
-    words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
-    if len(words) < 4:
-        return -3.0
-    if any(re.search(pattern, lower) for pattern in LOW_VALUE_PATTERNS):
-        return -4.0
-    if re.search(r"\bciente\b|\bwww\b|https?://|@\w+|\+?\d[\d\s().-]{7,}\d", lower):
+    if not is_quality_sentence(compact):
         return -4.0
 
     terms = informative_terms(compact)
@@ -561,6 +599,49 @@ def sentence_quality_score(sentence: str, query_terms: set[str] | None = None) -
     if compact[-1:] in ".!?":
         score += 0.25
     return score
+
+
+def is_quality_sentence(sentence: str) -> bool:
+    """Reject broken, list-like, legal, commercial, and heading-collision text."""
+
+    compact = " ".join(sentence.split()).strip()
+    lower = compact.lower()
+    words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", lower)
+    if len(words) < 4:
+        return False
+    if any(re.search(pattern, lower) for pattern in LOW_VALUE_PATTERNS):
+        return False
+    if re.search(r"\bciente\b|\bwww\b|https?://|@\w+|\+?\d[\d\s().-]{7,}\d", lower):
+        return False
+    if re.match(r"^(?:[-–—]\s*)?\d+\s*(?:[-–—]\s*)?[A-Za-zÀ-ÿ]", compact):
+        return False
+    if re.search(r"\.{3,}", compact):
+        return False
+    if re.search(
+        r"\brango de descarga segura del funciones de seguridad\b|"
+        r"\b(?:del|de la)\s+funciones de seguridad t[ií]picas\b|"
+        r"\bcircuitos neum[aá]ticos iso\s*13849\s+funci[oó]n de seguridad\b",
+        lower,
+    ):
+        return False
+    section_hits = sum(1 for pattern in PREFERRED_SECTION_PATTERNS if re.search(pattern, lower))
+    has_technical_action = bool(
+        re.search(
+            r"\b(?:bloquea|conmuta|controla|detecta|evacua|evita|garantiza|"
+            r"libera|monitoriza|permite|previene|proporciona|reduce|se define como)\b",
+            lower,
+        )
+    )
+    if section_hits >= 2 and not has_technical_action:
+        return False
+    if re.search(
+        r"\bseguridad\s+s[oó]lo\s+est[aá]\s+permitido\b|"
+        r"\bcircuitos\s+mostrados\s+presentan\s+aplicaciones\b|"
+        r"\bobserva(?:r|ci[oó]n)\s+todo\s+ello\s+durante\b",
+        lower,
+    ):
+        return False
+    return True
 
 
 def informative_terms(text: str) -> set[str]:

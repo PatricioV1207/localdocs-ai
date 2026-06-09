@@ -11,8 +11,8 @@ def test_load_config_uses_defaults_when_missing(tmp_path):
     assert config.search.minimum_score == 0.05
     assert config.exports.export_dir == "exports"
     assert config.llm.use_openai_if_available is False
-    assert config.study.max_flashcards == 20
-    assert config.study.max_questions == 20
+    assert config.study.max_flashcards == 10
+    assert config.study.max_questions == 10
     assert config.obsidian.vault_dir == "exports/obsidian_vault"
     assert config.anki.flashcards_file == "exports/flashcards.tsv"
     assert config.warnings == []
@@ -107,8 +107,8 @@ flashcards_file = ""
     assert config.search.minimum_score == 0.05
     assert config.exports.export_dir == "exports"
     assert config.llm.use_openai_if_available is False
-    assert config.study.max_flashcards == 20
-    assert config.study.max_questions == 20
+    assert config.study.max_flashcards == 10
+    assert config.study.max_questions == 10
     assert config.obsidian.vault_dir == "exports/obsidian_vault"
     assert config.anki.flashcards_file == "exports/flashcards.tsv"
     assert len(config.warnings) >= 11

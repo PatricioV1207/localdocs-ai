@@ -11,6 +11,7 @@ from localdocs.cleaning import (
     informative_terms,
     invalid_question_message,
     is_low_value_text,
+    is_quality_sentence,
     is_valid_question,
     sentence_quality_score,
     split_sentences,
@@ -158,11 +159,22 @@ def _extractive_answer(
             continue
         if selected and _is_redundant(sentence, [item[0] for item in selected]):
             continue
+        if len(concepts) >= 2 and len(selected) >= len(concepts):
+            if not _connects_requested_concepts(sentence, concepts):
+                continue
         selected.append((sentence, result))
         seen_sentences.add(key)
         if len(selected) >= target_count:
             break
 
+    if not selected:
+        return WEAK_EVIDENCE_MESSAGE, []
+
+    selected = [
+        (sentence, result)
+        for sentence, result in selected
+        if _answer_sentence_is_usable(sentence)
+    ]
     if not selected:
         return WEAK_EVIDENCE_MESSAGE, []
 
@@ -203,6 +215,8 @@ def _sentence_options(
     options: list[tuple[str, SearchResult, float]] = []
     for result in results:
         for sentence in split_sentences(result.text):
+            if not _answer_sentence_is_usable(sentence):
+                continue
             score = sentence_quality_score(sentence, question_terms) + result.score * 3.0
             if score < 0:
                 continue
@@ -269,6 +283,21 @@ def _is_redundant(sentence: str, selected: list[str]) -> bool:
         if terms and len(terms & existing_terms) / len(terms) >= 0.8:
             return True
     return False
+
+
+def _connects_requested_concepts(sentence: str, concepts: list[str]) -> bool:
+    sentence_terms = informative_terms(sentence)
+    matched = 0
+    for concept in concepts:
+        concept_terms = informative_terms(concept)
+        if concept_key(concept) in concept_key(sentence) or len(sentence_terms & concept_terms) >= 2:
+            matched += 1
+    return matched >= 2 or bool(re.search(r"\bv[aá]lvula\s+\d+[a-z]\d+\b", sentence, re.IGNORECASE))
+
+
+def _answer_sentence_is_usable(sentence: str) -> bool:
+    compact = " ".join(sentence.split()).strip()
+    return is_quality_sentence(compact) and compact.endswith((".", "?", "!"))
 
 
 def _unique_results(results: list[SearchResult]) -> list[SearchResult]:
