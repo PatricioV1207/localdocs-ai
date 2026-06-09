@@ -35,6 +35,20 @@ def test_quality_eval_cli_returns_success_and_summary():
     assert "source quality" in completed.stdout
 
 
+def test_quality_eval_quiet_cli_hides_passing_area_rows():
+    expected_checks = run_all().check_count
+    completed = subprocess.run(
+        [sys.executable, "scripts/run_quality_eval.py", "--quiet"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout.strip() == f"QUALITY EVAL PASSED: {expected_checks} checks"
+
+
 def test_quality_eval_cli_fails_when_expected_file_is_missing(tmp_path):
     fixtures_dir = tmp_path / "fixtures"
     expected_dir = tmp_path / "expected"

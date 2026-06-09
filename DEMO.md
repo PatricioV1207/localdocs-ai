@@ -63,7 +63,5 @@ Use a clean browser window and leave **Use OpenAI if available** unchecked.
 ## Validation Before a Release Demo
 
 ```bash
-OPENAI_API_KEY="" python -m pytest
-python -m compileall -q app.py localdocs tests scripts
-OPENAI_API_KEY="" python scripts/run_quality_eval.py
+python scripts/validate.py full
 ```

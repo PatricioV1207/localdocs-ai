@@ -215,43 +215,46 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Run tests:
+Run the fast development profile:
 
 ```bash
-python -m pytest
+python scripts/validate.py fast
 ```
 
-Running pytest as a Python module also ensures the repository package is importable consistently in local environments and GitHub Actions.
-
-The equivalent direct command remains available when your shell is configured for it:
+Run focused validation for touched areas:
 
 ```bash
-pytest
+python scripts/validate.py focused qa study
 ```
 
-Run the deterministic quality gate:
+Run the authoritative full gate before a commit or release:
 
 ```bash
-python scripts/run_quality_eval.py
+python scripts/validate.py full
 ```
 
-Compile all Python modules:
+Available focused areas:
+
+```txt
+core parsing search qa summaries study flashcards exports ui quality validation
+```
+
+Shared cleaning, concept extraction, or source-ranking changes should validate
+all affected outputs:
 
 ```bash
-python -m compileall app.py localdocs tests scripts
+python scripts/validate.py focused qa summaries study flashcards
 ```
 
-GitHub Actions runs pytest, compileall, and the deterministic quality gate on
-Python 3.11 and 3.12 for pushes and pull requests. It does not require
-`OPENAI_API_KEY`.
-
-Run the complete local validation sequence:
+Use `--dry-run` before a profile to see its commands without executing them:
 
 ```bash
-OPENAI_API_KEY="" python -m pytest
-python -m compileall -q app.py localdocs tests scripts
-OPENAI_API_KEY="" python scripts/run_quality_eval.py
+python scripts/validate.py --dry-run focused summaries
 ```
+
+The script clears `OPENAI_API_KEY` for deterministic validation and stops at the
+first failing step. GitHub Actions runs the equivalent full gate on Python 3.11
+and 3.12 for pushes, pull requests, and manual runs.
 
 ## Quality Evaluation
 
@@ -302,7 +305,8 @@ localdocs-ai/
 │   ├── fixtures/
 │   └── expected/
 ├── scripts/
-│   └── run_quality_eval.py
+│   ├── run_quality_eval.py
+│   └── validate.py
 ├── sample_docs/
 ├── tests/
 ├── QUALITY_STANDARD.md

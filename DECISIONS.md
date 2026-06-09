@@ -78,3 +78,13 @@ footer.
 **Reason:** PDF extraction frequently joins body text and footer text. Rejecting
 the entire chunk loses valid evidence; downstream sentence filters can remove
 the noisy sentence without discarding the technical one.
+
+## 010 - Use Tiered Validation Profiles
+
+**Decision:** Use `fast` during ordinary edits, `focused` for touched areas, and
+`full` only before commit, release, or final handoff.
+
+**Reason:** Repeatedly running every test and fixture produces redundant output
+and slows feedback without increasing confidence during a narrow iteration.
+The full profile remains unchanged in scope and is still the authoritative
+release gate.

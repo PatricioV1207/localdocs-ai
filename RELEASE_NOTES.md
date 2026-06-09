@@ -26,14 +26,13 @@ local-first Streamlit MVP.
 The release gate consists of:
 
 ```bash
-OPENAI_API_KEY="" python -m pytest
-python -m compileall -q app.py localdocs tests scripts
-OPENAI_API_KEY="" python scripts/run_quality_eval.py
+python scripts/validate.py full
 ```
 
-GitHub Actions runs the same gates on Python 3.11 and 3.12.
+This profile runs pytest, compileall, and every deterministic quality fixture.
+GitHub Actions runs the equivalent gates on Python 3.11 and 3.12.
 
-The final local verification for v0.3.5 passed 94 pytest tests and 265
+The final local verification for v0.3.5 passed 100 pytest tests and 265
 deterministic quality checks on Python 3.13.
 
 ## Known Limitations

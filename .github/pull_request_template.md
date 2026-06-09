@@ -8,9 +8,8 @@
 
 ## Testing
 
-- [ ] Ran `OPENAI_API_KEY="" python -m pytest`
-- [ ] Ran `python -m compileall -q app.py localdocs tests scripts`
-- [ ] Ran `OPENAI_API_KEY="" python scripts/run_quality_eval.py`
+- [ ] Ran focused validation for the touched areas
+- [ ] Ran `python scripts/validate.py full` once after focused checks passed
 - [ ] Checked the Streamlit app manually, if UI changed
 - [ ] Updated docs, if user-facing behavior changed
 - [ ] Added or updated a deterministic fixture, if quality behavior changed

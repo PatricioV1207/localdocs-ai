@@ -463,7 +463,11 @@ def _validate_schema(
         raise ValueError(f"{filename}: chunk indexes must be unique.")
 
 
-def _print_report(report: EvaluationReport) -> None:
+def _print_report(report: EvaluationReport, quiet: bool = False) -> None:
+    if quiet and report.passed:
+        print(f"QUALITY EVAL PASSED: {report.check_count} checks")
+        return
+
     for result in report.results:
         status = "PASS" if result.passed else "FAIL"
         print(f"[{status}] {result.fixture} :: {result.area} ({result.checks} checks)")
@@ -500,6 +504,11 @@ def _parse_args() -> argparse.Namespace:
         default=DEFAULT_EXPECTED_DIR,
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Print only the final summary when all checks pass.",
+    )
     return parser.parse_args()
 
 
@@ -507,7 +516,7 @@ def main() -> int:
     args = _parse_args()
     selected = set(args.fixture) if args.fixture else None
     report = run_all(args.fixtures_dir, args.expected_dir, selected)
-    _print_report(report)
+    _print_report(report, quiet=args.quiet)
     return 0 if report.passed else 1
 
 

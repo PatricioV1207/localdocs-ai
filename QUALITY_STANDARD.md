@@ -92,14 +92,18 @@ Spanish pneumatic-safety material that exposed prior quality regressions.
 ## Commands
 
 ```bash
-python scripts/run_quality_eval.py
-python -m pytest
-python -m compileall app.py localdocs tests scripts
+python scripts/validate.py fast
+python scripts/validate.py focused qa study
+python scripts/validate.py full
 ```
 
 `run_quality_eval.py` prints one result per quality area and exits with status `1`
 if any expectation fails. GitHub Actions runs this command with
 `OPENAI_API_KEY` empty.
+
+`validate.py` is the contributor entry point. Fast and focused profiles provide
+iteration feedback; only `full` proves the complete release gate. The quality
+runner also supports `--quiet` for concise successful output.
 
 ## Changing the Gate
 
@@ -109,6 +113,7 @@ When behavior changes intentionally:
 2. Add or revise a fixture and its expected result.
 3. Record the reason in `DECISIONS.md`.
 4. Update `PROGRESS.md`.
-5. Run all three validation commands.
+5. Run focused validation for the changed area.
+6. Run the full profile once before commit or release.
 
 Do not weaken an expected result only to make a regression pass.

@@ -12,6 +12,8 @@
   `función`.
 - The evaluation command is integrated into GitHub Actions.
 - Open-source presentation materials are aligned with the v0.3.5 MVP.
+- Validation profiles provide smaller development feedback without weakening
+  the final release gate.
 
 ## Completed
 
@@ -47,10 +49,20 @@
   replaced public placeholder language with sample-based interface previews,
   clarified CI job naming, and updated the ignored local architecture and
   roadmap notes to v0.3.5.
+- Added `scripts/validate.py` with fast, focused, and full profiles plus
+  deterministic area-to-test and area-to-fixture mappings.
+- Added concise successful output for quality evaluations and documented the
+  profile policy for Codex, contributors, CI, demos, and releases.
+- Verified the optimized workflow: `fast` passed 18 smoke tests, focused QA
+  passed 23 tests and 237 relevant checks, and the single final `full` run
+  passed all release gates.
 
 ## Validation Checklist
 
-- [x] `python -m pytest` - 94 passed on Python 3.13
+- [x] `python scripts/validate.py fast` - 18 smoke tests passed
+- [x] `python scripts/validate.py focused qa` - 23 tests and 237 relevant
+  quality checks passed
+- [x] `python scripts/validate.py full` - 100 tests passed on Python 3.13
 - [x] `python -m compileall app.py localdocs tests scripts`
 - [x] `python scripts/run_quality_eval.py` - 265 checks passed
 - [x] GitHub Actions Python 3.11/3.12 matrix configured to run all gates

@@ -65,7 +65,8 @@ localdocs-ai/
 │   ├── fixtures/
 │   └── expected/
 ├── scripts/
-│   └── run_quality_eval.py
+│   ├── run_quality_eval.py
+│   └── validate.py
 ├── localdocs/
 │   ├── __init__.py
 │   ├── parser.py
@@ -99,8 +100,7 @@ Use these commands when possible:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pytest
-python scripts/run_quality_eval.py
+python scripts/validate.py fast
 streamlit run app.py
 ```
 
@@ -141,6 +141,38 @@ Quality artifacts:
 - `evals/fixtures/*.json`: synthetic document inputs.
 - `evals/expected/*.json`: expected behavior for matching fixtures.
 - `scripts/run_quality_eval.py`: deterministic local and CI runner.
+- `scripts/validate.py`: fast, focused, and full validation profiles.
+
+## Validation workflow
+
+Use the smallest profile that proves the current change:
+
+1. **During development:** run `python scripts/validate.py fast` after small
+   edits. It compiles application modules and runs the essential parsing,
+   chunking, search, export, and UI-state smoke tests.
+2. **After changing an area:** run focused validation with one or more areas,
+   for example `python scripts/validate.py focused qa study`. This runs mapped
+   tests and only the relevant deterministic fixtures.
+3. **Before commit, release, or final handoff:** run
+   `python scripts/validate.py full` exactly once after focused checks pass.
+   This is the authoritative release gate.
+
+Focused areas:
+
+```txt
+core parsing search qa summaries study flashcards exports ui quality validation
+```
+
+For shared cleaning, concept extraction, or source-ranking changes, combine the
+affected output areas, usually:
+
+```bash
+python scripts/validate.py focused qa summaries study flashcards
+```
+
+Use `python scripts/validate.py --dry-run focused qa` to inspect a plan without
+running it. Do not repeatedly run `full` while iterating, and do not claim a
+full validation from `fast` or `focused` results.
 
 When changing QA, summaries, cleaning, concept extraction, study questions,
 flashcards, UI document state, or source ranking:
@@ -148,13 +180,14 @@ flashcards, UI document state, or source ranking:
 1. Preserve source grounding and citations.
 2. Add or update the smallest relevant fixture and expected file.
 3. Record intentional evaluation-policy changes in `DECISIONS.md`.
-4. Run:
+4. Run the relevant focused profile while iterating:
 
 ```bash
-python -m pytest
-python -m compileall app.py localdocs tests scripts
-python scripts/run_quality_eval.py
+python scripts/validate.py focused qa summaries
 ```
+
+5. Run `python scripts/validate.py full` once before commit, release, or final
+   handoff.
 
 Do not weaken an expected result merely to make a regression pass. Prefer fewer
 high-quality study items over forcing the configured maximum.

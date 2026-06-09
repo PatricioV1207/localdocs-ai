@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-No unreleased changes yet.
+### Added
+
+- Fast, focused, and full validation profiles through `scripts/validate.py`.
+- Concise `--quiet` output for successful deterministic quality evaluations.
+
+### Improved
+
+- Contributor and Codex guidance now reserves the full gate for commit,
+  release, and final handoff while using smaller checks during iteration.
 
 ## v0.3.5 - 2026-06-09
 

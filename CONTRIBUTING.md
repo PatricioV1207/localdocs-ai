@@ -39,23 +39,29 @@ Run the app:
 streamlit run app.py
 ```
 
-Run tests:
+During development, run the fast profile:
 
 ```bash
-OPENAI_API_KEY="" python -m pytest
+python scripts/validate.py fast
 ```
 
-Compile all Python modules:
+After changing a specific area, run focused validation:
 
 ```bash
-python -m compileall -q app.py localdocs tests scripts
+python scripts/validate.py focused parsing
+python scripts/validate.py focused qa summaries
 ```
 
-Run deterministic quality evaluations:
+Before opening a pull request, run the full profile once:
 
 ```bash
-OPENAI_API_KEY="" python scripts/run_quality_eval.py
+python scripts/validate.py full
 ```
+
+Focused areas are `core`, `parsing`, `search`, `qa`, `summaries`, `study`,
+`flashcards`, `exports`, `ui`, `quality`, and `validation`. Multiple areas may
+be combined in one command. For shared cleaning, concept extraction, or source
+ranking, combine `qa summaries study flashcards`.
 
 ## Good First Contributions
 
@@ -80,9 +86,10 @@ collaboration, and plugin systems.
 3. Implement the smallest clear change.
 4. For QA, summaries, cleaning, study tools, or source selection, add or update
    a matching fixture under `evals/fixtures/` and `evals/expected/`.
-5. Run all validation commands.
+5. Run focused validation for the changed areas.
 6. Update `CHANGELOG.md` when behavior visible to users changes.
-7. Open a pull request using the repository template.
+7. Run the full profile once.
+8. Open a pull request using the repository template.
 
 ## Code and Documentation Style
 
@@ -98,7 +105,7 @@ collaboration, and plugin systems.
 
 - Keep the change focused.
 - Add or update tests when behavior changes.
-- Run pytest, compileall, and the deterministic quality evaluation.
+- Run `python scripts/validate.py full`.
 - Update `README.md`, `RELEASE_NOTES.md`, or `CHANGELOG.md` when user-facing
   behavior changes.
 - Avoid committing generated exports, local virtual environments, caches, or secrets.

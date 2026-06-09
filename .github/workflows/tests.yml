@@ -34,15 +34,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run full validation
         env:
           OPENAI_API_KEY: ""
-        run: python -m pytest
-
-      - name: Compile Python modules
-        run: python -m compileall -q app.py localdocs tests scripts
-
-      - name: Run quality evaluations
-        env:
-          OPENAI_API_KEY: ""
-        run: python scripts/run_quality_eval.py
+        run: python scripts/validate.py full

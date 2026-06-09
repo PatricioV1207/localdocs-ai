@@ -46,8 +46,8 @@ Paste safe-to-share error text here. Do not include private document contents or
 
 - [ ] Restarted Streamlit
 - [ ] Reproduced without an OpenAI API key
-- [ ] Ran `python -m pytest`
-- [ ] Ran `python scripts/run_quality_eval.py`
+- [ ] Ran `python scripts/validate.py fast`
+- [ ] Ran a relevant focused profile
 
 ## Privacy check
 
